@@ -34,7 +34,9 @@ export default function ComposeWorkout() {
   const [cover, setCover] = useState<{ base64: string; uri: string } | null>(null);
   const [items, setItems] = useWorkoutDraft();
   const [hydrated, setHydrated] = useState(false);
-  const touchedRef = useRef(false); // user edited before hydration finished
+  // Per-field touch tracking: a name-only edit before hydration must not
+  // suppress hydrating the description (or vice versa).
+  const touchedRef = useRef({ name: false, description: false, items: false });
 
   const { data: existing } = useQuery({
     enabled: Boolean(editId),
@@ -50,10 +52,8 @@ export default function ComposeWorkout() {
     // Text fields hydrate only while untouched; the exercise list hydrates
     // only while empty - stepper edits, removals, or picker additions made
     // before the fetch resolves are never clobbered.
-    if (!touchedRef.current) {
-      setName(existing.name);
-      setDescription(existing.description ?? "");
-    }
+    if (!touchedRef.current.name) setName(existing.name);
+    if (!touchedRef.current.description) setDescription(existing.description ?? "");
     // MERGE the server plan with whatever the user did before the fetch
     // resolved: server exercises keep any local prescription tweaks, and
     // early picker additions are appended - never dropped, never able to
@@ -142,7 +142,7 @@ export default function ComposeWorkout() {
     delta: number,
   ) => {
     haptic.tick();
-    touchedRef.current = true;
+    touchedRef.current.items = true;
     setItems((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
@@ -157,7 +157,7 @@ export default function ComposeWorkout() {
   };
 
   const remove = (id: string) => {
-    touchedRef.current = true;
+    touchedRef.current.items = true;
     setItems((prev) => prev.filter((e) => e.id !== id));
   };
 
@@ -210,7 +210,7 @@ export default function ComposeWorkout() {
               className="h-14 rounded-2xl border border-input-border bg-input px-4 font-sans text-[14px] text-foreground"
               maxLength={80}
               onChangeText={(v) => {
-                touchedRef.current = true;
+                touchedRef.current.name = true;
                 setName(v);
               }}
               placeholder="e.g. Push Day"
@@ -226,7 +226,7 @@ export default function ComposeWorkout() {
               maxLength={500}
               multiline
               onChangeText={(v) => {
-                touchedRef.current = true;
+                touchedRef.current.description = true;
                 setDescription(v);
               }}
               placeholder="Focus, tempo, anything future-you should know..."

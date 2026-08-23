@@ -101,15 +101,19 @@ export async function PATCH(request: Request, { id }: Record<string, string>) {
       })),
     );
   } catch (error) {
-    // Restore BOTH halves of the workout - metadata and plan - so a failed
-    // replace can't leave new name/cover paired with the old exercise list.
+    // Convergent rollback. An insert can commit even when its HTTP response
+    // is lost (no transactions on the Neon HTTP driver), so blindly
+    // reinserting the snapshot could leave BOTH plans attached. Clearing the
+    // plan first makes the compensation converge to the snapshot regardless
+    // of what the failed statement actually committed.
     try {
       await db
         .update(workouts)
         .set({ name: existing.name, description: existing.description, image: existing.image })
         .where(eq(workouts.id, id));
+      await db.delete(workoutExercises).where(eq(workoutExercises.workoutId, id));
       if (previous.length > 0) {
-        await db.insert(workoutExercises).values(previous).onConflictDoNothing();
+        await db.insert(workoutExercises).values(previous);
       }
     } catch {
       // rollback best-effort; surface the original failure
