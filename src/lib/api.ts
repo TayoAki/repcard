@@ -132,3 +132,44 @@ export const fetchSessions = (limit?: number) =>
   request<SessionListItem[]>(`/api/sessions${limit ? `?limit=${limit}` : ""}`);
 export const saveSession = (payload: SaveSessionInput) =>
   request<{ id: string; recordedSets: number }>("/api/sessions", { method: "POST", body: payload });
+
+// ----- Session detail / calendar / streak / stats / profile -----------------
+
+export type SessionDetail = {
+  id: string;
+  workoutId: string;
+  workoutName: string;
+  image: string | null;
+  startedAt: string;
+  completedAt: string;
+  durationSeconds: number;
+  exercises: { id: string; name: string; image: string | null; sets: { reps: number; weight: number | null }[] }[];
+  setCount: number;
+  volumeKg: number | null;
+};
+
+export type DayStats = { sessions: number; totalSeconds: number; averageSeconds: number };
+
+export type ProfileData = {
+  handle: string;
+  cardSerial: number;
+  gender: "male" | "female";
+  goal: "build-muscle" | "lose-fat" | "maintain";
+  experience: "beginner" | "intermediate" | "advanced";
+  weightUnit: "kg" | "lb";
+  name: string;
+  email: string;
+};
+
+const range = (start: Date, end: Date) =>
+  new URLSearchParams({ start: start.toISOString(), end: end.toISOString() }).toString();
+
+export const fetchSessionDetail = (id: string) => request<SessionDetail>(`/api/sessions/${id}`);
+export const fetchCalendarDates = (start: Date, end: Date) =>
+  request<{ dates: string[] }>(`/api/sessions/calendar?${range(start, end)}`);
+export const fetchStreakDates = () => request<{ dates: string[] }>("/api/sessions/streak");
+export const fetchDayStats = (start: Date, end: Date) =>
+  request<DayStats>(`/api/stats/day?${range(start, end)}`);
+export const fetchProfile = () => request<ProfileData>("/api/profile");
+export const updateProfile = (patch: { weightUnit?: "kg" | "lb" }) =>
+  request<{ message: string }>("/api/profile", { method: "PATCH", body: patch });
