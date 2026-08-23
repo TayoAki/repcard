@@ -173,3 +173,28 @@ export const fetchDayStats = (start: Date, end: Date) =>
 export const fetchProfile = () => request<ProfileData>("/api/profile");
 export const updateProfile = (patch: { weightUnit?: "kg" | "lb" }) =>
   request<{ message: string }>("/api/profile", { method: "PATCH", body: patch });
+
+// ----- Player card ----------------------------------------------------------
+
+export type CardData = {
+  name: string;
+  handle: string;
+  serial: number;
+  position: string;
+  season: number;
+  overall: number;
+  components: { consistency: number; volume: number; variety: number; prMomentum: number };
+  streak: number;
+  bestStreak: number;
+  stats: {
+    sessions28: number;
+    totalSessions: number;
+    totalMinutes: number;
+    volume28Kg: number;
+    prCount30: number;
+    muscleGroups28: number;
+  };
+};
+
+export const fetchMyCard = () => request<CardData>("/api/card/me");
+export const deleteAccount = () => request<{ message: string }>("/api/account", { method: "DELETE" });
