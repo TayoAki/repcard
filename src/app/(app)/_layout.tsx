@@ -16,6 +16,7 @@ export default function AppLayout() {
         options={{ animation: "slide_from_bottom", presentation: "fullScreenModal" }}
       />
       <Stack.Screen name="(modal)/session/[id]" />
+      <Stack.Screen name="(modal)/import/[slug]" />
       <Stack.Screen
         name="(modal)/plan/generate"
         options={{ animation: "slide_from_bottom", presentation: "fullScreenModal" }}
