@@ -214,3 +214,10 @@ export type GeneratedPlan = {
 };
 
 export const generatePlan = () => request<GeneratedPlan>("/api/plans/generate", { method: "POST", body: {} });
+
+// ----- Sharing / import -----------------------------------------------------
+
+export const mintShareSlug = (workoutId: string) =>
+  request<{ slug: string }>(`/api/workouts/${workoutId}/share`, { method: "POST", body: {} });
+export const importWorkout = (slug: string) =>
+  request<{ id: string; name: string }>("/api/workouts/import", { method: "POST", body: { slug } });
