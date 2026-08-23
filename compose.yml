@@ -1,0 +1,14 @@
+# Local dev database. `npm run db:up` / `npm run db:down`.
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: repcard
+      POSTGRES_USER: repcard
+      POSTGRES_PASSWORD: repcard
+    volumes:
+      - repcard-pg:/var/lib/postgresql/data
+volumes:
+  repcard-pg:

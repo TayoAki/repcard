@@ -8,13 +8,23 @@
     "ios": "expo run:ios",
     "android": "expo run:android",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx --env-file=.env src/db/seed/index.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo/vector-icons": "^15.0.2",
+    "@neondatabase/serverless": "^1.1.0",
     "@tanstack/react-query": "^5.101.4",
     "babel-preset-expo": "^57.0.6",
+    "date-fns": "^4.4.0",
+    "drizzle-orm": "^0.45.2",
     "expo": "~57.0.11",
     "expo-constants": "~57.0.9",
     "expo-font": "~57.0.1",
@@ -26,6 +36,7 @@
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.2",
     "nativewind": "^4.2.6",
+    "pg": "^8.23.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.2",
@@ -35,10 +46,14 @@
     "react-native-screens": "~4.26.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.10.1",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^3.4.19",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/pg": "^8.23.1",
     "@types/react": "~19.2.2",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.23.12",
     "typescript": "~6.0.3"
   }
 }
