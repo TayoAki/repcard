@@ -120,7 +120,7 @@ export default function WorkoutDetail() {
           <Button
             before={<Feather color="#052E22" name="play" size={16} />}
             className="mt-5"
-            onPress={() => Alert.alert("Coming next PR", "Live sessions land in the next feature PR.")}
+            onPress={() => router.push({ pathname: "/workout/[id]/live", params: { id } })}
           >
             Start Workout
           </Button>
