@@ -19,6 +19,7 @@ const schema = z.object({
 export default function ForgotPassword() {
   const router = useRouter();
   const fg = useToken("fg");
+  const primary = useToken("primary");
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -61,7 +62,7 @@ export default function ForgotPassword() {
         {sent ? (
           <View className="flex-1 items-center justify-center pb-20">
             <View className="h-14 w-14 items-center justify-center rounded-full bg-accent dark:bg-accent/20">
-              <Feather color={useTokenSafe()} name="mail" size={24} />
+              <Feather color={primary} name="mail" size={24} />
             </View>
             <Text className="mt-5 text-center font-bold text-[20px] text-foreground">
               Check your email
@@ -109,8 +110,4 @@ export default function ForgotPassword() {
       </View>
     </Screen>
   );
-}
-
-function useTokenSafe() {
-  return useToken("primary");
 }

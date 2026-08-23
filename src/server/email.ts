@@ -11,6 +11,14 @@ export async function sendEmail(to: string, subject: string, text: string) {
   const key = process.env.RESEND_API_KEY;
 
   if (!key) {
+    if (process.env.NODE_ENV === "production") {
+      // Never write reset links (or any mail body) into production logs -
+      // a token in a log drain is a password takeover. Fail loudly instead.
+      const error = new Error("RESEND_API_KEY is not configured");
+      reportError("email/send", error, { to, subject });
+      throw error;
+    }
+    // Dev keeps the full message visible so flows stay end-to-end testable.
     logEvent("email_logged_not_sent", { to, subject, text });
     return;
   }
