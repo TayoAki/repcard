@@ -14,6 +14,7 @@ import BattlesSection from "@/features/battles/battles-section";
 import PlayerCard from "@/features/card/player-card";
 import { deleteAccount, fetchMyCard, fetchProfile, updateProfile } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
+import { haptic } from "@/lib/haptics";
 import { useToken } from "@/theme/use-token";
 
 /** Your card, the share action, and account settings. */
@@ -44,6 +45,7 @@ export default function CardTab() {
     setSharing(true);
     try {
       const uri = await captureRef(shotRef, { format: "png", quality: 1 });
+      haptic.success();
       await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: "Share your RepCard" });
     } catch {
       Alert.alert("Could not render your card", "Try again.");

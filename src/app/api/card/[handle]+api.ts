@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db, profiles } from "@/db";
-import { buildCardPayload } from "./_data";
+import { buildCardPayload } from "@/server/card-data";
 
 const handleSchema = z.string().regex(/^[a-z0-9]{1,24}$/);
 

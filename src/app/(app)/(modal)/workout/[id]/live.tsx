@@ -13,6 +13,7 @@ import Skeleton from "@/components/ui/skeleton";
 import { useSessionTimer } from "@/hooks/use-session-timer";
 import { fetchWorkout, saveSession, type WorkoutExerciseItem } from "@/lib/api";
 import { cx } from "@/lib/cx";
+import { haptic } from "@/lib/haptics";
 import { useToken } from "@/theme/use-token";
 
 const clock = (seconds: number) => new Date(seconds * 1000).toISOString().slice(11, 19);
@@ -146,6 +147,7 @@ export default function LiveSession() {
         text: "Finish",
         onPress: async () => {
           if (!(await persist())) return;
+          haptic.success();
           exitApprovedRef.current = true;
           router.dismissAll();
           router.replace("/history");
@@ -160,8 +162,10 @@ export default function LiveSession() {
       const next = new Set(prev);
       if (next.has(key)) {
         next.delete(key);
+        haptic.tick();
       } else {
         next.add(key);
+        haptic.setDone();
         timer.startRest(exercise.restSeconds);
       }
       return next;
