@@ -85,8 +85,10 @@ export async function PATCH(request: Request, { id }: Record<string, string>) {
     .update(workouts)
     .set({ name, description: description || null, image: cover })
     .where(eq(workouts.id, id));
-  await db.delete(workoutExercises).where(eq(workoutExercises.workoutId, id));
   try {
+    // The delete is inside the compensation block: if it fails after the
+    // metadata update, the catch still restores the previous metadata.
+    await db.delete(workoutExercises).where(eq(workoutExercises.workoutId, id));
     await db.insert(workoutExercises).values(
       items.map((item, position) => ({
         workoutId: id,

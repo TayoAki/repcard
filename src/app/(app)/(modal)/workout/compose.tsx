@@ -46,12 +46,15 @@ export default function ComposeWorkout() {
   // user already started typing, in which case their edits win.
   useEffect(() => {
     if (!existing || hydrated) return;
-    if (touchedRef.current) {
-      setHydrated(true);
-      return;
+    setHydrated(true);
+    // Text fields hydrate only while untouched; the exercise list hydrates
+    // only while empty - stepper edits, removals, or picker additions made
+    // before the fetch resolves are never clobbered.
+    if (!touchedRef.current) {
+      setName(existing.name);
+      setDescription(existing.description ?? "");
     }
-    setName(existing.name);
-    setDescription(existing.description ?? "");
+    if (items.length > 0) return;
     setItems(
       existing.exercises.map((e) => ({
         id: e.id,
@@ -64,8 +67,7 @@ export default function ComposeWorkout() {
         restSeconds: e.restSeconds,
       })),
     );
-    setHydrated(true);
-  }, [existing, hydrated, setItems]);
+  }, [existing, hydrated, items.length, setItems]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -130,6 +132,7 @@ export default function ComposeWorkout() {
     delta: number,
   ) => {
     haptic.tick();
+    touchedRef.current = true;
     setItems((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
@@ -143,7 +146,10 @@ export default function ComposeWorkout() {
     );
   };
 
-  const remove = (id: string) => setItems((prev) => prev.filter((e) => e.id !== id));
+  const remove = (id: string) => {
+    touchedRef.current = true;
+    setItems((prev) => prev.filter((e) => e.id !== id));
+  };
 
   return (
     <Screen>
