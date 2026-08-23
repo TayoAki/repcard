@@ -198,3 +198,10 @@ export type CardData = {
 
 export const fetchMyCard = () => request<CardData>("/api/card/me");
 export const deleteAccount = () => request<{ message: string }>("/api/account", { method: "DELETE" });
+
+// ----- Coach ----------------------------------------------------------------
+
+export type CoachCues = { source: "ai" | "dataset"; cues: string[]; mistake: string | null };
+
+export const fetchCoachCues = (exerciseId: string) =>
+  request<CoachCues>(`/api/exercises/${exerciseId}/coach`);
