@@ -99,8 +99,18 @@ export async function PATCH(request: Request, { id }: Record<string, string>) {
       })),
     );
   } catch (error) {
-    if (previous.length > 0) {
-      await db.insert(workoutExercises).values(previous).onConflictDoNothing();
+    // Restore BOTH halves of the workout - metadata and plan - so a failed
+    // replace can't leave new name/cover paired with the old exercise list.
+    try {
+      await db
+        .update(workouts)
+        .set({ name: existing.name, description: existing.description, image: existing.image })
+        .where(eq(workouts.id, id));
+      if (previous.length > 0) {
+        await db.insert(workoutExercises).values(previous).onConflictDoNothing();
+      }
+    } catch {
+      // rollback best-effort; surface the original failure
     }
     throw error;
   }
