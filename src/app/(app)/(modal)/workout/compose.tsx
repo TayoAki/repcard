@@ -58,6 +58,11 @@ export default function ComposeWorkout() {
     // resolved: server exercises keep any local prescription tweaks, and
     // early picker additions are appended - never dropped, never able to
     // replace the original plan on save.
+    //
+    // Deliberate: pre-hydration, server exercises are not rendered, so the
+    // only possible "removal" is un-toggling one's own early addition. If
+    // that id is also in the original plan, the server copy is restored -
+    // an unseen plan must never shrink from an add-then-undo gesture.
     setItems((prev) => {
       const fromServer = existing.exercises.map((e) => {
         const local = prev.find((p) => p.id === e.id);
