@@ -171,7 +171,7 @@ export const fetchStreakDates = () => request<{ dates: string[] }>("/api/session
 export const fetchDayStats = (start: Date, end: Date) =>
   request<DayStats>(`/api/stats/day?${range(start, end)}`);
 export const fetchProfile = () => request<ProfileData>("/api/profile");
-export const updateProfile = (patch: { weightUnit?: "kg" | "lb" }) =>
+export const updateProfile = (patch: { weightUnit?: "kg" | "lb"; pushToken?: string | null }) =>
   request<{ message: string }>("/api/profile", { method: "PATCH", body: patch });
 
 // ----- Player card ----------------------------------------------------------
@@ -221,3 +221,23 @@ export const mintShareSlug = (workoutId: string) =>
   request<{ slug: string }>(`/api/workouts/${workoutId}/share`, { method: "POST", body: {} });
 export const importWorkout = (slug: string) =>
   request<{ id: string; name: string }>("/api/workouts/import", { method: "POST", body: { slug } });
+
+// ----- Battles --------------------------------------------------------------
+
+export type BattleListItem = {
+  id: string;
+  code: string;
+  status: "pending" | "active" | "finished";
+  startedAt: string | null;
+  endsAt: string | null;
+};
+
+export type BattleFighter = { name: string; handle: string; streak: number; sessionsInBattle: number };
+
+export type BattleDetail = BattleListItem & { me: BattleFighter; rival: BattleFighter | null };
+
+export const fetchBattles = () => request<BattleListItem[]>("/api/battles");
+export const createBattle = () => request<BattleListItem>("/api/battles", { method: "POST", body: {} });
+export const joinBattle = (code: string) =>
+  request<{ id: string }>("/api/battles/join", { method: "POST", body: { code } });
+export const fetchBattle = (id: string) => request<BattleDetail>(`/api/battles/${id}`);

@@ -4,7 +4,10 @@ import { z } from "zod";
 import { db, profiles } from "@/db";
 import { auth } from "@/lib/auth";
 
-const patchSchema = z.object({ weightUnit: z.enum(["kg", "lb"]).optional() });
+const patchSchema = z.object({
+  weightUnit: z.enum(["kg", "lb"]).optional(),
+  pushToken: z.string().max(64).nullable().optional(),
+});
 
 export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });

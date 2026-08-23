@@ -10,6 +10,7 @@ import Button from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
 import Screen from "@/components/ui/screen";
 import Skeleton from "@/components/ui/skeleton";
+import BattlesSection from "@/features/battles/battles-section";
 import PlayerCard from "@/features/card/player-card";
 import { deleteAccount, fetchMyCard, fetchProfile, updateProfile } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
@@ -110,6 +111,8 @@ export default function CardTab() {
             </View>
           </>
         )}
+
+        <BattlesSection />
 
         <Text className="mb-2 mt-8 font-semibold text-[12px] uppercase tracking-wide text-muted-foreground">
           Settings

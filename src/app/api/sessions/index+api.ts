@@ -1,8 +1,11 @@
 import { count, countDistinct, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { db, workoutExercises, workouts, workoutSessions, workoutSessionSets } from "@/db";
+import { and, or } from "drizzle-orm";
+
+import { battles, db, profiles, user, workoutExercises, workouts, workoutSessions, workoutSessionSets } from "@/db";
 import { auth } from "@/lib/auth";
+import { sendPush } from "@/lib/push";
 
 const saveSchema = z.object({
   workoutId: z.uuid(),
@@ -103,5 +106,37 @@ export async function POST(request: Request) {
     );
   }
 
+  notifyRivals(session.user.id, session.user.name).catch(() => {});
+
   return Response.json({ id: created.id, recordedSets: valid.length }, { status: 201 });
+}
+
+/** Tell active-battle rivals this athlete just trained. Never throws. */
+async function notifyRivals(userId: string, userName: string) {
+  const active = await db
+    .select({ creatorId: battles.creatorId, opponentId: battles.opponentId })
+    .from(battles)
+    .where(
+      and(
+        eq(battles.status, "active"),
+        or(eq(battles.creatorId, userId), eq(battles.opponentId, userId)),
+      ),
+    );
+
+  const rivalIds = active
+    .map((b) => (b.creatorId === userId ? b.opponentId : b.creatorId))
+    .filter((id): id is string => Boolean(id));
+  if (rivalIds.length === 0) return;
+
+  const tokens = await db
+    .select({ pushToken: profiles.pushToken })
+    .from(profiles)
+    .innerJoin(user, eq(user.id, profiles.userId))
+    .where(or(...rivalIds.map((id) => eq(profiles.userId, id))));
+
+  await sendPush(
+    tokens.map((t) => t.pushToken).filter((t): t is string => Boolean(t)),
+    "Your rival just trained 🔔",
+    `${userName} logged a session. The battle clock is ticking.`,
+  );
 }
