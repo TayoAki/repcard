@@ -6,13 +6,40 @@
     "orientation": "portrait",
     "scheme": "repcard",
     "userInterfaceStyle": "automatic",
-    "ios": { "bundleIdentifier": "com.tayoaki.repcard", "supportsTablet": false },
-    "android": { "package": "com.tayoaki.repcard", "adaptiveIcon": { "backgroundColor": "#10B981" } },
-    "web": { "bundler": "metro", "output": "server" },
+    "ios": {
+      "bundleIdentifier": "com.tayoaki.repcard",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.tayoaki.repcard",
+      "adaptiveIcon": {
+        "backgroundColor": "#10B981"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "server"
+    },
     "plugins": [
       "expo-router",
-      ["expo-splash-screen", { "backgroundColor": "#022C22", "resizeMode": "contain", "imageWidth": 240 }]
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#022C22",
+          "resizeMode": "contain",
+          "imageWidth": 240
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow RepCard to access photos so you can pick a workout cover."
+        }
+      ]
     ],
-    "experiments": { "typedRoutes": true, "reactCompiler": true }
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
   }
 }
