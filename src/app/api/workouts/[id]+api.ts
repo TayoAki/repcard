@@ -74,24 +74,38 @@ export async function PATCH(request: Request, { id }: Record<string, string>) {
     cover = await storeCoverImage(image, `cover-${session.user.id}-${Date.now()}.jpg`);
   }
 
+  // Snapshot the current plan so a failed replace can restore it
+  // (no transactions on the Neon HTTP driver).
+  const previous = await db
+    .select()
+    .from(workoutExercises)
+    .where(eq(workoutExercises.workoutId, id));
+
   await db
     .update(workouts)
     .set({ name, description: description || null, image: cover })
     .where(eq(workouts.id, id));
   await db.delete(workoutExercises).where(eq(workoutExercises.workoutId, id));
-  await db.insert(workoutExercises).values(
-    items.map((item, position) => ({
-      workoutId: id,
-      exerciseId: item.id,
-      sets: item.sets,
-      reps: item.reps,
-      targetWeight: item.targetWeight ?? null,
-      restSeconds: item.restSeconds,
-      position,
-    })),
-  );
+  try {
+    await db.insert(workoutExercises).values(
+      items.map((item, position) => ({
+        workoutId: id,
+        exerciseId: item.id,
+        sets: item.sets,
+        reps: item.reps,
+        targetWeight: item.targetWeight ?? null,
+        restSeconds: item.restSeconds,
+        position,
+      })),
+    );
+  } catch (error) {
+    if (previous.length > 0) {
+      await db.insert(workoutExercises).values(previous).onConflictDoNothing();
+    }
+    throw error;
+  }
 
-  return Response.json({ message: "Workout updated" });
+  return Response.json({ message: "Workout updated", coverStored: image == null || cover !== null });
 }
 
 export async function DELETE(request: Request, { id }: Record<string, string>) {

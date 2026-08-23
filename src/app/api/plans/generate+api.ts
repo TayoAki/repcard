@@ -84,18 +84,29 @@ export async function POST(request: Request) {
     }
   }
 
+  // An empty catalog (or keywords with no matches) must not persist hollow workouts.
+  const usable = plan.filter((w) => w.exercises.length > 0);
+  if (usable.length === 0) {
+    return Response.json(
+      { message: "The exercise catalog has nothing to build a plan from - seed it first" },
+      { status: 422 },
+    );
+  }
+
   const created: { id: string; name: string; exerciseCount: number }[] = [];
-  for (const workout of plan) {
-    const [row] = await db
-      .insert(workouts)
-      .values({
-        userId: session.user.id,
-        name: workout.name,
-        description: workout.description,
-        source: "ai_plan",
-      })
-      .returning();
-    if (workout.exercises.length > 0) {
+  try {
+    for (const workout of usable) {
+      const [row] = await db
+        .insert(workouts)
+        .values({
+          userId: session.user.id,
+          name: workout.name,
+          description: workout.description,
+          // The AI badge must only appear on genuinely AI-designed plans.
+          source: source === "ai" ? "ai_plan" : "manual",
+        })
+        .returning();
+      created.push({ id: row.id, name: workout.name, exerciseCount: workout.exercises.length });
       await db.insert(workoutExercises).values(
         workout.exercises.map((e, position) => ({
           workoutId: row.id,
@@ -107,7 +118,12 @@ export async function POST(request: Request) {
         })),
       );
     }
-    created.push({ id: row.id, name: workout.name, exerciseCount: workout.exercises.length });
+  } catch (error) {
+    // Roll back the whole program: a partial plan plus a retry means duplicates.
+    for (const row of created) {
+      await db.delete(workouts).where(eq(workouts.id, row.id)).catch(() => {});
+    }
+    throw error;
   }
 
   return Response.json({ source, workouts: created }, { status: 201 });

@@ -7,10 +7,10 @@ import { summarizeStreak } from "@/lib/streak";
 
 const idSchema = z.uuid();
 
-async function fighterStats(userId: string, windowStart: Date | null) {
+async function fighterStats(userId: string, windowStart: Date | null, windowEnd: Date | null) {
   const [rows, named] = await Promise.all([
     db
-      .select({ startedAt: workoutSessions.startedAt })
+      .select({ completedAt: workoutSessions.completedAt })
       .from(workoutSessions)
       .where(eq(workoutSessions.userId, userId)),
     db
@@ -20,8 +20,13 @@ async function fighterStats(userId: string, windowStart: Date | null) {
       .where(eq(user.id, userId))
       .limit(1),
   ]);
-  const streak = summarizeStreak(rows.map((r) => r.startedAt));
-  const inWindow = windowStart ? rows.filter((r) => r.startedAt >= windowStart).length : 0;
+  const streak = summarizeStreak(rows.map((r) => r.completedAt));
+  // Scores freeze at endsAt: sessions after the window can't change a result.
+  const inWindow = windowStart
+    ? rows.filter(
+        (r) => r.completedAt >= windowStart && (windowEnd === null || r.completedAt <= windowEnd),
+      ).length
+    : 0;
   return {
     name: named[0]?.name ?? "Athlete",
     handle: named[0]?.handle ?? "",
@@ -48,8 +53,8 @@ export async function GET(request: Request, { id }: Record<string, string>) {
   const rivalId = battle.creatorId === me ? battle.opponentId : battle.creatorId;
 
   const [mine, rival] = await Promise.all([
-    fighterStats(me, battle.startedAt),
-    rivalId ? fighterStats(rivalId, battle.startedAt) : Promise.resolve(null),
+    fighterStats(me, battle.startedAt, battle.endsAt),
+    rivalId ? fighterStats(rivalId, battle.startedAt, battle.endsAt) : Promise.resolve(null),
   ]);
 
   return Response.json({

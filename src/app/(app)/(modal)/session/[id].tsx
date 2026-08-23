@@ -101,16 +101,22 @@ export default function SessionDetail() {
           ))}
         </View>
 
-        <Button
-          before={<Feather color="#052E22" name="repeat" size={15} />}
-          className="mt-6"
-          onPress={() =>
-            router.push({ pathname: "/workout/[id]/live", params: { id: data.workoutId } })
-          }
-          size="sm"
-        >
-          Run it back
-        </Button>
+        {data.workoutId !== null ? (
+          <Button
+            before={<Feather color="#052E22" name="repeat" size={15} />}
+            className="mt-6"
+            onPress={() =>
+              router.push({ pathname: "/workout/[id]/live", params: { id: data.workoutId! } })
+            }
+            size="sm"
+          >
+            Run it back
+          </Button>
+        ) : (
+          <Text className="mt-6 text-center font-sans text-[12px] text-muted-foreground">
+            The workout behind this session was deleted - the record stays.
+          </Text>
+        )}
       </ScrollView>
     </Screen>
   );

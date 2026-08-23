@@ -30,8 +30,8 @@ export async function GET(request: Request) {
     .where(
       and(
         eq(workoutSessions.userId, session.user.id),
-        gte(workoutSessions.startedAt, new Date(parsed.data.start)),
-        lt(workoutSessions.startedAt, new Date(parsed.data.end)),
+        gte(workoutSessions.completedAt, new Date(parsed.data.start)),
+        lt(workoutSessions.completedAt, new Date(parsed.data.end)),
       ),
     );
 

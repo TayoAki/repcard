@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Alert, Pressable, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-controller";
@@ -9,7 +9,7 @@ import Button from "@/components/ui/button";
 import Field from "@/components/ui/field";
 import Screen from "@/components/ui/screen";
 import { authClient } from "@/lib/auth-client";
-import { completedDraft } from "@/lib/onboarding-store";
+import { completedDraft, hydrationReady } from "@/lib/onboarding-store";
 import { signInSchema, type SignInValues } from "@/lib/validation/auth";
 
 export default function SignIn() {
@@ -17,8 +17,13 @@ export default function SignIn() {
   const passwordRef = useRef<TextInput>(null);
 
   // If onboarding was never finished, "Sign up" restarts it instead of
-  // landing on a signup form that would bounce back anyway.
-  const signUpHref = completedDraft().success
+  // landing on a signup form that would bounce back anyway. Re-evaluated
+  // after hydration so a cold start doesn't misread an empty draft.
+  const [draftComplete, setDraftComplete] = useState(() => completedDraft().success);
+  useEffect(() => {
+    hydrationReady.then(() => setDraftComplete(completedDraft().success));
+  }, []);
+  const signUpHref = draftComplete
     ? ("/sign-up" as const)
     : ({ pathname: "/onboarding/[step]", params: { step: "gender" } } as const);
 

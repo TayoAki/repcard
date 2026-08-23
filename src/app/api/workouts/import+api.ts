@@ -38,17 +38,23 @@ export async function POST(request: Request) {
     .returning();
 
   if (plan.length > 0) {
-    await db.insert(workoutExercises).values(
-      plan.map((item) => ({
-        workoutId: clone.id,
-        exerciseId: item.exerciseId,
-        sets: item.sets,
-        reps: item.reps,
-        targetWeight: item.targetWeight,
-        restSeconds: item.restSeconds,
-        position: item.position,
-      })),
-    );
+    try {
+      await db.insert(workoutExercises).values(
+        plan.map((item) => ({
+          workoutId: clone.id,
+          exerciseId: item.exerciseId,
+          sets: item.sets,
+          reps: item.reps,
+          targetWeight: item.targetWeight,
+          restSeconds: item.restSeconds,
+          position: item.position,
+        })),
+      );
+    } catch (error) {
+      // Never leave a hollow imported workout behind on a failed clone.
+      await db.delete(workouts).where(eq(workouts.id, clone.id));
+      throw error;
+    }
   }
 
   return Response.json({ id: clone.id, name: clone.name }, { status: 201 });

@@ -100,9 +100,9 @@ export const workoutSessions = pgTable("workout_sessions", {
   userId: text()
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  workoutId: uuid()
-    .notNull()
-    .references(() => workouts.id, { onDelete: "cascade" }),
+  // History outlives its template: deleting a workout must never erase
+  // completed sessions (they feed stats, streaks, and the card rating).
+  workoutId: uuid().references(() => workouts.id, { onDelete: "set null" }),
   startedAt: timestamp({ withTimezone: true }).notNull(),
   completedAt: timestamp({ withTimezone: true }).notNull(),
   durationSeconds: integer().notNull(),

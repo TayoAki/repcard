@@ -69,17 +69,23 @@ export async function POST(request: Request) {
     .values({ userId: session.user.id, name, description: description || null, image: cover })
     .returning();
 
-  await db.insert(workoutExercises).values(
-    items.map((item, position) => ({
-      workoutId: created.id,
-      exerciseId: item.id,
-      sets: item.sets,
-      reps: item.reps,
-      targetWeight: item.targetWeight ?? null,
-      restSeconds: item.restSeconds,
-      position,
-    })),
-  );
+  try {
+    await db.insert(workoutExercises).values(
+      items.map((item, position) => ({
+        workoutId: created.id,
+        exerciseId: item.id,
+        sets: item.sets,
+        reps: item.reps,
+        targetWeight: item.targetWeight ?? null,
+        restSeconds: item.restSeconds,
+        position,
+      })),
+    );
+  } catch (error) {
+    // No transactions on the Neon HTTP driver: never leave an empty workout.
+    await db.delete(workouts).where(eq(workouts.id, created.id));
+    throw error;
+  }
 
-  return Response.json(created, { status: 201 });
+  return Response.json({ ...created, coverStored: !image || cover !== null }, { status: 201 });
 }

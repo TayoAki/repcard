@@ -22,9 +22,18 @@ const readOnboarding = (body: unknown) => {
 
 const uniqueHandle = async (name: string) => {
   const base = toHandle(name);
-  const [taken] = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.handle, base)).limit(1);
-  if (!taken) return base;
-  return `${base}${Math.floor(1000 + Math.random() * 9000)}`;
+  // First candidate is the bare handle; retries append fresh random suffixes.
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const candidate = attempt === 0 ? base : `${base}${Math.floor(1000 + Math.random() * 9000)}`;
+    const [taken] = await db
+      .select({ id: profiles.id })
+      .from(profiles)
+      .where(eq(profiles.handle, candidate))
+      .limit(1);
+    if (!taken) return candidate;
+  }
+  // Practically unreachable; timestamp suffix guarantees uniqueness.
+  return `${base.slice(0, 12)}${Date.now() % 100000000}`;
 };
 
 export const auth = betterAuth({

@@ -7,6 +7,11 @@ import { auth } from "@/lib/auth";
 
 const idSchema = z.uuid();
 
+// Per-instance cache: AI cues for an exercise are stable, so one generation
+// per exercise per server instance caps Gateway spend. (A DB-backed cache is
+// the durable upgrade if instances multiply.)
+const aiCueCache = new Map<string, { cues: string[]; mistake: string | null }>();
+
 const cuesSchema = z.object({
   cues: z
     .array(z.string().min(4).max(220))
@@ -40,6 +45,9 @@ export async function GET(request: Request, { id }: Record<string, string>) {
 
   if (!process.env.AI_GATEWAY_API_KEY) return Response.json(fallback);
 
+  const cached = aiCueCache.get(id);
+  if (cached) return Response.json({ source: "ai" as const, ...cached });
+
   try {
     const { output } = await generateText({
       model: "google/gemini-2.5-flash",
@@ -49,7 +57,9 @@ export async function GET(request: Request, { id }: Record<string, string>) {
       prompt: `Exercise: ${exercise.name}\nCategory: ${exercise.category}\nTarget muscles: ${exercise.muscles}\nEquipment: ${exercise.equipment ?? "none"}\nReference steps: ${exercise.instructions.join(" ")}`,
     });
     if (output?.cues?.length) {
-      return Response.json({ source: "ai" as const, cues: output.cues, mistake: output.mistake });
+      const result = { cues: output.cues, mistake: output.mistake };
+      aiCueCache.set(id, result);
+      return Response.json({ source: "ai" as const, ...result });
     }
   } catch (error) {
     console.warn("AI coach fell back to dataset:", error);

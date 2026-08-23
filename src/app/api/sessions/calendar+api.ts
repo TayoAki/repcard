@@ -25,15 +25,15 @@ export async function GET(request: Request) {
   if (!parsed.success) return Response.json({ message: "Invalid range" }, { status: 400 });
 
   const rows = await db
-    .select({ startedAt: workoutSessions.startedAt })
+    .select({ completedAt: workoutSessions.completedAt })
     .from(workoutSessions)
     .where(
       and(
         eq(workoutSessions.userId, session.user.id),
-        gte(workoutSessions.startedAt, new Date(parsed.data.start)),
-        lt(workoutSessions.startedAt, new Date(parsed.data.end)),
+        gte(workoutSessions.completedAt, new Date(parsed.data.start)),
+        lt(workoutSessions.completedAt, new Date(parsed.data.end)),
       ),
     );
 
-  return Response.json({ dates: rows.map((r) => r.startedAt.toISOString()) });
+  return Response.json({ dates: rows.map((r) => r.completedAt.toISOString()) });
 }

@@ -11,9 +11,13 @@ const KEY = "repcard.onboarding";
 
 export const draft: Partial<Onboarding> = {};
 
-// Hydrate once at module load; failures just mean a fresh draft.
-AsyncStorage.getItem(KEY)
-  .then((raw) => raw && Object.assign(draft, JSON.parse(raw)))
+// Hydrate once at module load; failures just mean a fresh draft. Consumers
+// that branch on completeness await `hydrationReady` so a cold start can't
+// read the draft before storage resolves.
+export const hydrationReady: Promise<void> = AsyncStorage.getItem(KEY)
+  .then((raw) => {
+    if (raw) Object.assign(draft, JSON.parse(raw));
+  })
   .catch(() => {});
 
 export function saveAnswer<K extends keyof Onboarding>(field: K, value: Onboarding[K]) {

@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Image, Linking, Pressable, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-controller";
 
@@ -34,6 +34,7 @@ export default function ComposeWorkout() {
   const [cover, setCover] = useState<{ base64: string; uri: string } | null>(null);
   const [items, setItems] = useWorkoutDraft();
   const [hydrated, setHydrated] = useState(false);
+  const touchedRef = useRef(false); // user edited before hydration finished
 
   const { data: existing } = useQuery({
     enabled: Boolean(editId),
@@ -41,9 +42,14 @@ export default function ComposeWorkout() {
     queryFn: () => fetchWorkout(editId!),
   });
 
-  // Edit mode: hydrate the form once from the fetched workout.
+  // Edit mode: hydrate the form once from the fetched workout - unless the
+  // user already started typing, in which case their edits win.
   useEffect(() => {
     if (!existing || hydrated) return;
+    if (touchedRef.current) {
+      setHydrated(true);
+      return;
+    }
     setName(existing.name);
     setDescription(existing.description ?? "");
     setItems(
@@ -75,11 +81,16 @@ export default function ComposeWorkout() {
           restSeconds: e.restSeconds,
         })),
       };
-      if (editId) await updateWorkout(editId, payload);
-      else await createWorkout(payload);
+      return editId ? await updateWorkout(editId, payload) : await createWorkout(payload);
     },
     onError: (error) => Alert.alert("Could not save workout", error.message),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (cover && result && (result as { coverStored?: boolean }).coverStored === false) {
+        Alert.alert(
+          "Cover not saved",
+          "The image was too large for keyless storage. The workout saved without it.",
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ["workouts"] });
       if (editId) queryClient.invalidateQueries({ queryKey: ["workout", editId] });
       setItems([]);
@@ -182,7 +193,10 @@ export default function ComposeWorkout() {
             <TextInput
               className="h-14 rounded-2xl border border-input-border bg-input px-4 font-sans text-[14px] text-foreground"
               maxLength={80}
-              onChangeText={setName}
+              onChangeText={(v) => {
+                touchedRef.current = true;
+                setName(v);
+              }}
               placeholder="e.g. Push Day"
               placeholderTextColor={mutedFg}
               selectionColor={primary}
@@ -195,7 +209,10 @@ export default function ComposeWorkout() {
               className="h-20 rounded-2xl border border-input-border bg-input px-4 py-3 font-sans text-[14px] text-foreground"
               maxLength={500}
               multiline
-              onChangeText={setDescription}
+              onChangeText={(v) => {
+                touchedRef.current = true;
+                setDescription(v);
+              }}
               placeholder="Focus, tempo, anything future-you should know..."
               placeholderTextColor={mutedFg}
               selectionColor={primary}

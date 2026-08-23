@@ -1,8 +1,10 @@
 import { format } from "date-fns";
 
 export const formatDuration = (seconds: number) => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.round((seconds % 3600) / 60);
+  // Round to whole minutes FIRST so 1h 59m 40s renders as 2h 0m, never 1h 60m.
+  const totalMinutes = Math.round(seconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes} min`;
 };
 

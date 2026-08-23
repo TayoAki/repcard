@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db, exercises as exerciseTable, workouts, workoutSessions, workoutSessionSets } from "@/db";
@@ -19,14 +19,14 @@ export async function GET(request: Request, { id }: Record<string, string>) {
       .select({
         id: workoutSessions.id,
         workoutId: workoutSessions.workoutId,
-        workoutName: workouts.name,
+        workoutName: sql<string>`coalesce(${workouts.name}, 'Deleted workout')`,
         image: workouts.image,
         startedAt: workoutSessions.startedAt,
         completedAt: workoutSessions.completedAt,
         durationSeconds: workoutSessions.durationSeconds,
       })
       .from(workoutSessions)
-      .innerJoin(workouts, eq(workouts.id, workoutSessions.workoutId))
+      .leftJoin(workouts, eq(workouts.id, workoutSessions.workoutId))
       .where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, session.user.id)))
       .limit(1),
     db

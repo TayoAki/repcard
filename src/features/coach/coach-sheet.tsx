@@ -14,7 +14,7 @@ export default function CoachSheet({ exerciseId, exerciseName, visible, onClose 
   const insets = useSafeAreaInsets();
   const primary = useToken("primary");
 
-  const { data, isPending } = useQuery({
+  const { data, isError, isPending, refetch } = useQuery({
     enabled: visible && Boolean(exerciseId),
     queryKey: ["coach", exerciseId],
     queryFn: () => fetchCoachCues(exerciseId),
@@ -57,6 +57,20 @@ export default function CoachSheet({ exerciseId, exerciseName, visible, onClose 
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton className="h-10 w-full" key={i} />
                 ))}
+              </View>
+            ) : isError ? (
+              <View className="mt-5 items-center py-6">
+                <Feather color={primary} name="wifi-off" size={22} />
+                <Text className="mt-3 font-sans text-[13px] text-muted-foreground">
+                  The coach is unreachable right now.
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  className="mt-4 rounded-full border border-border bg-background px-4 py-2 active:opacity-70"
+                  onPress={() => refetch()}
+                >
+                  <Text className="font-semibold text-[12px] text-primary">Try again</Text>
+                </Pressable>
               </View>
             ) : (
               <View className="mt-5 gap-3.5">

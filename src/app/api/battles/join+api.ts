@@ -1,5 +1,5 @@
 import { addDays } from "date-fns";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { battles, db } from "@/db";
@@ -28,11 +28,17 @@ export async function POST(request: Request) {
     return Response.json({ message: "Battle already started" }, { status: 409 });
   }
 
+  // Race-safe: the update only lands if the battle is still pending, so of
+  // two concurrent joins exactly one wins and the other gets the 409.
   const now = new Date();
-  await db
+  const claimed = await db
     .update(battles)
     .set({ opponentId: session.user.id, status: "active", startedAt: now, endsAt: addDays(now, 7) })
-    .where(eq(battles.id, battle.id));
+    .where(and(eq(battles.id, battle.id), eq(battles.status, "pending")))
+    .returning();
+  if (claimed.length === 0) {
+    return Response.json({ message: "Battle already started" }, { status: 409 });
+  }
 
   return Response.json({ id: battle.id, message: "Battle on" });
 }
