@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { buildCardPayload } from "./_data";
+import { buildCardPayload } from "@/server/card-data";
 
 export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });

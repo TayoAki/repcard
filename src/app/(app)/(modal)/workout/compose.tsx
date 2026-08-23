@@ -15,6 +15,7 @@ import {
   updateWorkout,
   type WorkoutPayload,
 } from "@/lib/api";
+import { haptic } from "@/lib/haptics";
 import { useToken } from "@/theme/use-token";
 
 /**
@@ -116,7 +117,8 @@ export default function ComposeWorkout() {
     id: string,
     field: "sets" | "reps" | "restSeconds" | "targetWeight",
     delta: number,
-  ) =>
+  ) => {
+    haptic.tick();
     setItems((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
@@ -128,6 +130,7 @@ export default function ComposeWorkout() {
         return { ...e, [field]: Math.max(min, e[field] + delta) };
       }),
     );
+  };
 
   const remove = (id: string) => setItems((prev) => prev.filter((e) => e.id !== id));
 
