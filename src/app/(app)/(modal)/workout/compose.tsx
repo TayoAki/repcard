@@ -54,20 +54,30 @@ export default function ComposeWorkout() {
       setName(existing.name);
       setDescription(existing.description ?? "");
     }
-    if (items.length > 0) return;
-    setItems(
-      existing.exercises.map((e) => ({
-        id: e.id,
-        name: e.name,
-        image: e.image,
-        muscles: e.muscles,
-        sets: e.sets,
-        reps: e.reps,
-        targetWeight: e.targetWeight,
-        restSeconds: e.restSeconds,
-      })),
-    );
-  }, [existing, hydrated, items.length, setItems]);
+    // MERGE the server plan with whatever the user did before the fetch
+    // resolved: server exercises keep any local prescription tweaks, and
+    // early picker additions are appended - never dropped, never able to
+    // replace the original plan on save.
+    setItems((prev) => {
+      const fromServer = existing.exercises.map((e) => {
+        const local = prev.find((p) => p.id === e.id);
+        return (
+          local ?? {
+            id: e.id,
+            name: e.name,
+            image: e.image,
+            muscles: e.muscles,
+            sets: e.sets,
+            reps: e.reps,
+            targetWeight: e.targetWeight,
+            restSeconds: e.restSeconds,
+          }
+        );
+      });
+      const additions = prev.filter((p) => !existing.exercises.some((e) => e.id === p.id));
+      return [...fromServer, ...additions];
+    });
+  }, [existing, hydrated, setItems]);
 
   const save = useMutation({
     mutationFn: async () => {
