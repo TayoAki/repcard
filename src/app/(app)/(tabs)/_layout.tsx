@@ -59,8 +59,7 @@ export default function TabLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            // Composer modal ships in the workouts PR.
-            router.push("/workouts");
+            router.push("/workout/compose");
           },
         }}
         options={{

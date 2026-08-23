@@ -8,6 +8,10 @@ export default function AppLayout() {
         name="(modal)/exercise"
         options={{ animation: "slide_from_bottom", presentation: "fullScreenModal" }}
       />
+      <Stack.Screen
+        name="(modal)/workout"
+        options={{ animation: "slide_from_bottom", presentation: "fullScreenModal" }}
+      />
     </Stack>
   );
 }
