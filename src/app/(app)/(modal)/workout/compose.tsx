@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Image, Linking, Pressable, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-controller";
 
@@ -34,6 +34,9 @@ export default function ComposeWorkout() {
   const [cover, setCover] = useState<{ base64: string; uri: string } | null>(null);
   const [items, setItems] = useWorkoutDraft();
   const [hydrated, setHydrated] = useState(false);
+  // Per-field touch tracking: a name-only edit before hydration must not
+  // suppress hydrating the description (or vice versa).
+  const touchedRef = useRef({ name: false, description: false, items: false });
 
   const { data: existing } = useQuery({
     enabled: Boolean(editId),
@@ -41,24 +44,44 @@ export default function ComposeWorkout() {
     queryFn: () => fetchWorkout(editId!),
   });
 
-  // Edit mode: hydrate the form once from the fetched workout.
+  // Edit mode: hydrate the form once from the fetched workout - unless the
+  // user already started typing, in which case their edits win.
   useEffect(() => {
     if (!existing || hydrated) return;
-    setName(existing.name);
-    setDescription(existing.description ?? "");
-    setItems(
-      existing.exercises.map((e) => ({
-        id: e.id,
-        name: e.name,
-        image: e.image,
-        muscles: e.muscles,
-        sets: e.sets,
-        reps: e.reps,
-        targetWeight: e.targetWeight,
-        restSeconds: e.restSeconds,
-      })),
-    );
     setHydrated(true);
+    // Text fields hydrate only while untouched; the exercise list hydrates
+    // only while empty - stepper edits, removals, or picker additions made
+    // before the fetch resolves are never clobbered.
+    if (!touchedRef.current.name) setName(existing.name);
+    if (!touchedRef.current.description) setDescription(existing.description ?? "");
+    // MERGE the server plan with whatever the user did before the fetch
+    // resolved: server exercises keep any local prescription tweaks, and
+    // early picker additions are appended - never dropped, never able to
+    // replace the original plan on save.
+    //
+    // Deliberate: pre-hydration, server exercises are not rendered, so the
+    // only possible "removal" is un-toggling one's own early addition. If
+    // that id is also in the original plan, the server copy is restored -
+    // an unseen plan must never shrink from an add-then-undo gesture.
+    setItems((prev) => {
+      const fromServer = existing.exercises.map((e) => {
+        const local = prev.find((p) => p.id === e.id);
+        return (
+          local ?? {
+            id: e.id,
+            name: e.name,
+            image: e.image,
+            muscles: e.muscles,
+            sets: e.sets,
+            reps: e.reps,
+            targetWeight: e.targetWeight,
+            restSeconds: e.restSeconds,
+          }
+        );
+      });
+      const additions = prev.filter((p) => !existing.exercises.some((e) => e.id === p.id));
+      return [...fromServer, ...additions];
+    });
   }, [existing, hydrated, setItems]);
 
   const save = useMutation({
@@ -75,11 +98,16 @@ export default function ComposeWorkout() {
           restSeconds: e.restSeconds,
         })),
       };
-      if (editId) await updateWorkout(editId, payload);
-      else await createWorkout(payload);
+      return editId ? await updateWorkout(editId, payload) : await createWorkout(payload);
     },
     onError: (error) => Alert.alert("Could not save workout", error.message),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (cover && result && (result as { coverStored?: boolean }).coverStored === false) {
+        Alert.alert(
+          "Cover not saved",
+          "The image was too large for keyless storage. The workout saved without it.",
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ["workouts"] });
       if (editId) queryClient.invalidateQueries({ queryKey: ["workout", editId] });
       setItems([]);
@@ -119,6 +147,7 @@ export default function ComposeWorkout() {
     delta: number,
   ) => {
     haptic.tick();
+    touchedRef.current.items = true;
     setItems((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
@@ -132,7 +161,10 @@ export default function ComposeWorkout() {
     );
   };
 
-  const remove = (id: string) => setItems((prev) => prev.filter((e) => e.id !== id));
+  const remove = (id: string) => {
+    touchedRef.current.items = true;
+    setItems((prev) => prev.filter((e) => e.id !== id));
+  };
 
   return (
     <Screen>
@@ -182,7 +214,10 @@ export default function ComposeWorkout() {
             <TextInput
               className="h-14 rounded-2xl border border-input-border bg-input px-4 font-sans text-[14px] text-foreground"
               maxLength={80}
-              onChangeText={setName}
+              onChangeText={(v) => {
+                touchedRef.current.name = true;
+                setName(v);
+              }}
               placeholder="e.g. Push Day"
               placeholderTextColor={mutedFg}
               selectionColor={primary}
@@ -195,7 +230,10 @@ export default function ComposeWorkout() {
               className="h-20 rounded-2xl border border-input-border bg-input px-4 py-3 font-sans text-[14px] text-foreground"
               maxLength={500}
               multiline
-              onChangeText={setDescription}
+              onChangeText={(v) => {
+                touchedRef.current.description = true;
+                setDescription(v);
+              }}
               placeholder="Focus, tempo, anything future-you should know..."
               placeholderTextColor={mutedFg}
               selectionColor={primary}

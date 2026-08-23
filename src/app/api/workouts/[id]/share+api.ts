@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { db, workouts } from "@/db";
@@ -26,7 +26,28 @@ export async function POST(request: Request, { id }: Record<string, string>) {
 
   if (workout.shareSlug) return Response.json({ slug: workout.shareSlug });
 
-  const slug = randomSlug();
-  await db.update(workouts).set({ shareSlug: slug }).where(eq(workouts.id, id));
-  return Response.json({ slug }, { status: 201 });
+  // Race + collision safe: the qualified update only lands while shareSlug is
+  // still null, and a unique-violation on the slug just tries a fresh one.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const slug = randomSlug();
+    try {
+      const updated = await db
+        .update(workouts)
+        .set({ shareSlug: slug })
+        .where(and(eq(workouts.id, id), isNull(workouts.shareSlug)))
+        .returning();
+      if (updated.length > 0) return Response.json({ slug }, { status: 201 });
+
+      // Lost the race - return whatever the winner minted.
+      const [current] = await db
+        .select({ shareSlug: workouts.shareSlug })
+        .from(workouts)
+        .where(eq(workouts.id, id))
+        .limit(1);
+      if (current?.shareSlug) return Response.json({ slug: current.shareSlug });
+    } catch {
+      // slug collision with another workout - loop and regenerate
+    }
+  }
+  return Response.json({ message: "Could not mint a share link" }, { status: 500 });
 }

@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
@@ -8,7 +8,7 @@ import Button from "@/components/ui/button";
 import Screen from "@/components/ui/screen";
 import OptionCard from "@/features/onboarding/option-card";
 import { STEPS, stepIndex } from "@/features/onboarding/steps";
-import { draft, saveAnswer } from "@/lib/onboarding-store";
+import { draft, hydrationReady, saveAnswer } from "@/lib/onboarding-store";
 import { type Onboarding } from "@/lib/validation/onboarding";
 import { useToken } from "@/theme/use-token";
 
@@ -19,6 +19,11 @@ export default function OnboardingStep() {
   const fg = useToken("fg");
 
   const [answers, setAnswers] = useState<Partial<Onboarding>>(() => ({ ...draft }));
+
+  // Cold start: refresh the snapshot once persisted answers finish loading.
+  useEffect(() => {
+    hydrationReady.then(() => setAnswers((prev) => ({ ...draft, ...prev })));
+  }, []);
 
   const index = stepIndex(stepKey);
   const step = STEPS[index];

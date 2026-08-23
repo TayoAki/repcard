@@ -16,14 +16,14 @@ export async function buildCardPayload(userId: string) {
     db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1),
     db.select({ name: user.name }).from(user).where(eq(user.id, userId)).limit(1),
     db
-      .select({ startedAt: workoutSessions.startedAt, durationSeconds: workoutSessions.durationSeconds })
+      .select({ completedAt: workoutSessions.completedAt, durationSeconds: workoutSessions.durationSeconds })
       .from(workoutSessions)
       .where(eq(workoutSessions.userId, userId)),
     // volume per half-window (kg)
     db
       .select({
-        recent: sql<number>`coalesce(sum(case when ${workoutSessions.startedAt} >= ${d14} then ${workoutSessionSets.weight} * ${workoutSessionSets.reps} else 0 end), 0)::float`,
-        prior: sql<number>`coalesce(sum(case when ${workoutSessions.startedAt} >= ${d28} and ${workoutSessions.startedAt} < ${d14} then ${workoutSessionSets.weight} * ${workoutSessionSets.reps} else 0 end), 0)::float`,
+        recent: sql<number>`coalesce(sum(case when ${workoutSessions.completedAt} >= ${d14} then ${workoutSessionSets.weight} * ${workoutSessionSets.reps} else 0 end), 0)::float`,
+        prior: sql<number>`coalesce(sum(case when ${workoutSessions.completedAt} >= ${d28} and ${workoutSessions.completedAt} < ${d14} then ${workoutSessionSets.weight} * ${workoutSessionSets.reps} else 0 end), 0)::float`,
       })
       .from(workoutSessionSets)
       .innerJoin(workoutSessions, eq(workoutSessions.id, workoutSessionSets.sessionId))
@@ -33,13 +33,13 @@ export async function buildCardPayload(userId: string) {
       .from(workoutSessionSets)
       .innerJoin(workoutSessions, eq(workoutSessions.id, workoutSessionSets.sessionId))
       .innerJoin(exercises, eq(exercises.id, workoutSessionSets.exerciseId))
-      .where(and(eq(workoutSessions.userId, userId), gte(workoutSessions.startedAt, d28))),
+      .where(and(eq(workoutSessions.userId, userId), gte(workoutSessions.completedAt, d28))),
     // exercises whose 30d max beats their prior all-time max
     db
       .select({
         exerciseId: workoutSessionSets.exerciseId,
-        recentMax: max(sql<number>`case when ${workoutSessions.startedAt} >= ${d30} then ${workoutSessionSets.weight} end`),
-        priorMax: max(sql<number>`case when ${workoutSessions.startedAt} < ${d30} then ${workoutSessionSets.weight} end`),
+        recentMax: max(sql<number>`case when ${workoutSessions.completedAt} >= ${d30} then ${workoutSessionSets.weight} end`),
+        priorMax: max(sql<number>`case when ${workoutSessions.completedAt} < ${d30} then ${workoutSessionSets.weight} end`),
       })
       .from(workoutSessionSets)
       .innerJoin(workoutSessions, eq(workoutSessions.id, workoutSessionSets.sessionId))
@@ -50,8 +50,8 @@ export async function buildCardPayload(userId: string) {
   const profile = profileRows[0];
   if (!profile) return null;
 
-  const streak = summarizeStreak(sessionRows.map((s) => s.startedAt));
-  const sessionsLast28 = sessionRows.filter((s) => s.startedAt >= d28).length;
+  const streak = summarizeStreak(sessionRows.map((s) => s.completedAt));
+  const sessionsLast28 = sessionRows.filter((s) => s.completedAt >= d28).length;
   const prCount30 = prRows.filter(
     (r) => r.recentMax !== null && (r.priorMax === null || Number(r.recentMax) > Number(r.priorMax)),
   ).length;

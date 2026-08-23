@@ -62,10 +62,12 @@ export default function LiveSession() {
           .map((n) => {
             const typed = inputsRef.current[`${exercise.id}:${n}`];
             const weight = Number(typed?.weight ?? "") || exercise.targetWeight || 0;
+            // A typed 0 is a real value (failed set) - only blank falls back to plan.
+            const typedReps = Number.parseInt(typed?.reps ?? "", 10);
             return {
               exerciseId: exercise.id,
               setNumber: n,
-              reps: Number.parseInt(typed?.reps ?? "", 10) || exercise.reps,
+              reps: Number.isNaN(typedReps) ? exercise.reps : typedReps,
               ...(weight > 0 && { weight }),
             };
           }),
@@ -158,16 +160,18 @@ export default function LiveSession() {
 
   const toggleSet = (exercise: WorkoutExerciseItem, setNumber: number) => {
     const key = `${exercise.id}:${setNumber}`;
+    // Side effects stay OUT of the updater - React may replay it.
+    const wasDone = done.has(key);
+    if (wasDone) {
+      haptic.tick();
+    } else {
+      haptic.setDone();
+      timer.startRest(exercise.restSeconds);
+    }
     setDone((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-        haptic.tick();
-      } else {
-        next.add(key);
-        haptic.setDone();
-        timer.startRest(exercise.restSeconds);
-      }
+      if (wasDone) next.delete(key);
+      else next.add(key);
       return next;
     });
   };

@@ -94,9 +94,12 @@ export type WorkoutPayload = {
 export const fetchWorkouts = () => request<WorkoutListItem[]>("/api/workouts");
 export const fetchWorkout = (id: string) => request<WorkoutDetail>(`/api/workouts/${id}`);
 export const createWorkout = (payload: WorkoutPayload) =>
-  request<{ id: string }>("/api/workouts", { method: "POST", body: payload });
+  request<{ id: string; coverStored?: boolean }>("/api/workouts", { method: "POST", body: payload });
 export const updateWorkout = (id: string, payload: WorkoutPayload) =>
-  request<{ message: string }>(`/api/workouts/${id}`, { method: "PATCH", body: payload });
+  request<{ message: string; coverStored?: boolean }>(`/api/workouts/${id}`, {
+    method: "PATCH",
+    body: payload,
+  });
 export const deleteWorkout = (id: string) =>
   request<{ message: string }>(`/api/workouts/${id}`, { method: "DELETE" });
 
@@ -119,7 +122,7 @@ export type SaveSessionInput = {
 
 export type SessionListItem = {
   id: string;
-  workoutId: string;
+  workoutId: string | null;
   workoutName: string;
   image: string | null;
   completedAt: string;
@@ -137,7 +140,7 @@ export const saveSession = (payload: SaveSessionInput) =>
 
 export type SessionDetail = {
   id: string;
-  workoutId: string;
+  workoutId: string | null;
   workoutName: string;
   image: string | null;
   startedAt: string;

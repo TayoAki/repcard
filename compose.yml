@@ -3,7 +3,7 @@ services:
   db:
     image: postgres:16-alpine
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432" # loopback only - never expose dev creds to the LAN
     environment:
       POSTGRES_DB: repcard
       POSTGRES_USER: repcard

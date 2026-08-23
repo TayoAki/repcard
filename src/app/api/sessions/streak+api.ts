@@ -9,9 +9,9 @@ export async function GET(request: Request) {
   if (!session) return Response.json({ message: "Unauthorized" }, { status: 401 });
 
   const rows = await db
-    .select({ startedAt: workoutSessions.startedAt })
+    .select({ completedAt: workoutSessions.completedAt })
     .from(workoutSessions)
     .where(eq(workoutSessions.userId, session.user.id));
 
-  return Response.json({ dates: rows.map((r) => r.startedAt.toISOString()) });
+  return Response.json({ dates: rows.map((r) => r.completedAt.toISOString()) });
 }

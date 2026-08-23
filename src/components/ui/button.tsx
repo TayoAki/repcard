@@ -29,7 +29,7 @@ const Button = forwardRef<ComponentRef<typeof Pressable>, Props>(function Button
     <Pressable
       ref={ref}
       accessibilityRole="button"
-      accessibilityState={{ disabled: Boolean(disabled), busy: Boolean(busy) }}
+      accessibilityState={{ disabled: Boolean(disabled) || Boolean(busy), busy: Boolean(busy) }}
       className={cx(
         "flex-row items-center justify-center gap-2 rounded-2xl border px-5",
         size === "sm" ? "h-11" : "h-14",

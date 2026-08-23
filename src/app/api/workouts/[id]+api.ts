@@ -74,24 +74,54 @@ export async function PATCH(request: Request, { id }: Record<string, string>) {
     cover = await storeCoverImage(image, `cover-${session.user.id}-${Date.now()}.jpg`);
   }
 
+  // Snapshot the current plan so a failed replace can restore it
+  // (no transactions on the Neon HTTP driver).
+  const previous = await db
+    .select()
+    .from(workoutExercises)
+    .where(eq(workoutExercises.workoutId, id));
+
   await db
     .update(workouts)
     .set({ name, description: description || null, image: cover })
     .where(eq(workouts.id, id));
-  await db.delete(workoutExercises).where(eq(workoutExercises.workoutId, id));
-  await db.insert(workoutExercises).values(
-    items.map((item, position) => ({
-      workoutId: id,
-      exerciseId: item.id,
-      sets: item.sets,
-      reps: item.reps,
-      targetWeight: item.targetWeight ?? null,
-      restSeconds: item.restSeconds,
-      position,
-    })),
-  );
+  try {
+    // The delete is inside the compensation block: if it fails after the
+    // metadata update, the catch still restores the previous metadata.
+    await db.delete(workoutExercises).where(eq(workoutExercises.workoutId, id));
+    await db.insert(workoutExercises).values(
+      items.map((item, position) => ({
+        workoutId: id,
+        exerciseId: item.id,
+        sets: item.sets,
+        reps: item.reps,
+        targetWeight: item.targetWeight ?? null,
+        restSeconds: item.restSeconds,
+        position,
+      })),
+    );
+  } catch (error) {
+    // Convergent rollback. An insert can commit even when its HTTP response
+    // is lost (no transactions on the Neon HTTP driver), so blindly
+    // reinserting the snapshot could leave BOTH plans attached. Clearing the
+    // plan first makes the compensation converge to the snapshot regardless
+    // of what the failed statement actually committed.
+    try {
+      await db
+        .update(workouts)
+        .set({ name: existing.name, description: existing.description, image: existing.image })
+        .where(eq(workouts.id, id));
+      await db.delete(workoutExercises).where(eq(workoutExercises.workoutId, id));
+      if (previous.length > 0) {
+        await db.insert(workoutExercises).values(previous);
+      }
+    } catch {
+      // rollback best-effort; surface the original failure
+    }
+    throw error;
+  }
 
-  return Response.json({ message: "Workout updated" });
+  return Response.json({ message: "Workout updated", coverStored: image == null || cover !== null });
 }
 
 export async function DELETE(request: Request, { id }: Record<string, string>) {

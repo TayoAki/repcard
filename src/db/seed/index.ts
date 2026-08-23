@@ -28,7 +28,8 @@ type SourceExercise = {
 };
 
 async function main() {
-  process.loadEnvFile();
+  // env comes from `tsx --env-file=.env` (see the db:seed script) - no
+  // process.loadEnvFile(), which would demand Node >= 20.12.
   const { db } = await import("../index");
   const { exercises } = await import("../schema");
 

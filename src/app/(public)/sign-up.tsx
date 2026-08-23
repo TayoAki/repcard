@@ -9,7 +9,7 @@ import Button from "@/components/ui/button";
 import Field from "@/components/ui/field";
 import Screen from "@/components/ui/screen";
 import { authClient } from "@/lib/auth-client";
-import { clearDraft, completedDraft } from "@/lib/onboarding-store";
+import { clearDraft, completedDraft, hydrationReady } from "@/lib/onboarding-store";
 import { signUpSchema, type SignUpValues } from "@/lib/validation/auth";
 
 export default function SignUp() {
@@ -25,6 +25,7 @@ export default function SignUp() {
   });
 
   const submit = handleSubmit(async ({ name, email, password }) => {
+    await hydrationReady; // cold start: don't judge the draft before storage loads
     const onboarding = completedDraft();
     if (!onboarding.success) {
       // Answers missing (cleared storage, deep link) - restart the flow.
