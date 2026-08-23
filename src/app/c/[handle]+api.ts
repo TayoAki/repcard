@@ -4,11 +4,13 @@ import { z } from "zod";
 import { db, profiles } from "@/db";
 import { buildCardPayload } from "@/server/card-data";
 import { escapeHtml, htmlPage } from "@/lib/web/page";
+import { allowRequest, clientIp, tooManyRequests } from "@/server/rate-limit";
 
 const handleSchema = z.string().regex(/^[a-z0-9]{1,24}$/);
 
 /** PUBLIC HTML: the player card as a web page. */
-export async function GET(_request: Request, { handle }: Record<string, string>) {
+export async function GET(request: Request, { handle }: Record<string, string>) {
+  if (!allowRequest(`public:c:${clientIp(request)}`, 60, 60_000)) return tooManyRequests();
   if (!handleSchema.safeParse(handle).success) return new Response("Not found", { status: 404 });
 
   const [profile] = await db

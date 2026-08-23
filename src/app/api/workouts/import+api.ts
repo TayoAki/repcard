@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { db, workoutExercises, workouts } from "@/db";
 import { auth } from "@/lib/auth";
+import { serverError } from "@/server/log";
 
 const bodySchema = z.object({ slug: z.string().regex(/^[a-z0-9]{4,12}$/) });
 
@@ -26,22 +27,23 @@ export async function POST(request: Request) {
     .from(workoutExercises)
     .where(eq(workoutExercises.workoutId, source.id));
 
-  const [clone] = await db
-    .insert(workouts)
-    .values({
-      userId: session.user.id,
-      name: source.name,
-      description: source.description,
-      image: source.image,
-      source: "imported",
-    })
-    .returning();
-
-  if (plan.length > 0) {
-    try {
-      await db.insert(workoutExercises).values(
+  let clone;
+  try {
+    clone = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(workouts)
+      .values({
+        userId: session.user.id,
+        name: source.name,
+        description: source.description,
+        image: source.image,
+        source: "imported",
+      })
+      .returning();
+    if (plan.length > 0) {
+      await tx.insert(workoutExercises).values(
         plan.map((item) => ({
-          workoutId: clone.id,
+          workoutId: row.id,
           exerciseId: item.exerciseId,
           sets: item.sets,
           reps: item.reps,
@@ -50,11 +52,11 @@ export async function POST(request: Request) {
           position: item.position,
         })),
       );
-    } catch (error) {
-      // Never leave a hollow imported workout behind on a failed clone.
-      await db.delete(workouts).where(eq(workouts.id, clone.id));
-      throw error;
     }
+      return row;
+    });
+  } catch (error) {
+    return serverError("workouts.import", error);
   }
 
   return Response.json({ id: clone.id, name: clone.name }, { status: 201 });
