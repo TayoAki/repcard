@@ -33,7 +33,15 @@ const saveSchema = z
     message: "completedAt cannot be in the future",
   });
 
-const cursorSchema = z.iso.datetime();
+// Composite cursor "<ISO>_<uuid>": ties on completedAt page through by id.
+const cursorSchema = z
+  .string()
+  .regex(/^.+_[0-9a-f-]{36}$/)
+  .transform((raw) => {
+    const at = raw.lastIndexOf("_");
+    return { completedAt: raw.slice(0, at), id: raw.slice(at + 1) };
+  })
+  .pipe(z.object({ completedAt: z.iso.datetime(), id: z.uuid() }));
 
 /** Cursor-paginated history: `?cursor=` is the previous page's nextCursor. */
 export async function GET(request: Request) {
@@ -68,17 +76,26 @@ export async function GET(request: Request) {
     .where(
       and(
         eq(workoutSessions.userId, session.user.id),
-        cursor?.success ? lt(workoutSessions.completedAt, new Date(cursor.data)) : undefined,
+        cursor?.success
+          ? or(
+              lt(workoutSessions.completedAt, new Date(cursor.data.completedAt)),
+              and(
+                eq(workoutSessions.completedAt, new Date(cursor.data.completedAt)),
+                lt(workoutSessions.id, cursor.data.id),
+              ),
+            )
+          : undefined,
       ),
     )
     .groupBy(workoutSessions.id, workouts.id)
-    .orderBy(desc(workoutSessions.completedAt));
+    .orderBy(desc(workoutSessions.completedAt), desc(workoutSessions.id));
 
   // Fetch one extra row to learn whether another page exists.
   const rows = await query.limit(pageSize + 1);
   const items = rows.slice(0, pageSize);
+  const last = items[items.length - 1];
   const nextCursor =
-    rows.length > pageSize ? items[items.length - 1].completedAt.toISOString() : null;
+    rows.length > pageSize ? `${last.completedAt.toISOString()}_${last.id}` : null;
 
   return Response.json({ items, nextCursor });
 }
