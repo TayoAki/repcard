@@ -1,7 +1,10 @@
 import { Stack } from "expo-router";
 
+import { StreakProvider } from "@/features/streak/streak-context";
+
 export default function AppLayout() {
   return (
+    <StreakProvider>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
@@ -12,6 +15,8 @@ export default function AppLayout() {
         name="(modal)/workout"
         options={{ animation: "slide_from_bottom", presentation: "fullScreenModal" }}
       />
+      <Stack.Screen name="(modal)/session/[id]" />
     </Stack>
+    </StreakProvider>
   );
 }
