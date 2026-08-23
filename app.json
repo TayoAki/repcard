@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "RepCard",
+    "slug": "repcard",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "repcard",
+    "userInterfaceStyle": "automatic",
+    "ios": { "bundleIdentifier": "com.tayoaki.repcard", "supportsTablet": false },
+    "android": { "package": "com.tayoaki.repcard", "adaptiveIcon": { "backgroundColor": "#10B981" } },
+    "web": { "bundler": "metro", "output": "server" },
+    "plugins": [
+      "expo-router",
+      ["expo-splash-screen", { "backgroundColor": "#022C22", "resizeMode": "contain", "imageWidth": 240 }]
+    ],
+    "experiments": { "typedRoutes": true, "reactCompiler": true }
+  }
+}
