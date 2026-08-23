@@ -38,14 +38,24 @@ export default function WorkoutsTab() {
           <View className="pb-4 pt-3">
             <View className="flex-row items-center justify-between">
               <Text className="font-bold text-2xl tracking-tight text-foreground">Workouts</Text>
-              <Pressable
-                accessibilityLabel="Browse exercise library"
-                className="h-10 flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3.5 active:bg-muted"
-                onPress={() => router.push("/exercise")}
-              >
-                <Feather color={mutedFg} name="book-open" size={14} />
-                <Text className="font-medium text-[12px] text-muted-foreground">Library</Text>
-              </Pressable>
+              <View className="flex-row gap-2">
+                <Pressable
+                  accessibilityLabel="Generate an AI plan"
+                  className="h-10 flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3.5 active:bg-muted"
+                  onPress={() => router.push("/plan/generate")}
+                >
+                  <Feather color={mutedFg} name="cpu" size={14} />
+                  <Text className="font-medium text-[12px] text-muted-foreground">AI Plan</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel="Browse exercise library"
+                  className="h-10 flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3.5 active:bg-muted"
+                  onPress={() => router.push("/exercise")}
+                >
+                  <Feather color={mutedFg} name="book-open" size={14} />
+                  <Text className="font-medium text-[12px] text-muted-foreground">Library</Text>
+                </Pressable>
+              </View>
             </View>
             <View className="mt-4 h-12 flex-row items-center rounded-2xl border border-input-border bg-muted px-4">
               <Feather color={mutedFg} name="search" size={18} />
