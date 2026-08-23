@@ -40,6 +40,9 @@ battles, and template plans all work locally. Optional keys unlock more:
 |---|---|
 | `AI_GATEWAY_API_KEY` | AI-generated form cues + AI-designed plans |
 | `IMAGEKIT_PRIVATE_KEY` | CDN-hosted cover images (else inline data URIs) |
+| `RESEND_API_KEY` | Real password-reset emails (else logged to server console) |
+| `GOOGLE_CLIENT_ID/SECRET` + `EXPO_PUBLIC_AUTH_GOOGLE=1` | Continue with Google |
+| `APPLE_CLIENT_ID/SECRET` + `EXPO_PUBLIC_AUTH_APPLE=1` | Continue with Apple |
 
 ## Architecture notes
 
@@ -57,8 +60,9 @@ battles, and template plans all work locally. Optional keys unlock more:
 
 ## Roadmap
 
-App icon + splash artwork · Apple Sign-In · password reset · card "seasons" archive ·
-battle history & rematch · EAS build profiles + store submission.
+Card "seasons" archive · battle history & rematch · store screenshot suite · store
+submission. (Icon/splash/hero artwork, social sign-in, password reset, native iOS
+glass tabs, and EAS profiles shipped — see ASSET-PROMPTS.md for the art pipeline.)
 
 ## License
 

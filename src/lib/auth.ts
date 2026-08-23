@@ -8,6 +8,7 @@ import { db, profiles } from "@/db";
 import * as schema from "@/db/schema";
 import { toHandle } from "@/lib/handle";
 import { onboardingSchema } from "@/lib/validation/onboarding";
+import { sendEmail } from "@/server/email";
 
 const baseURL = process.env.BETTER_AUTH_URL!;
 
@@ -41,7 +42,33 @@ export const auth = betterAuth({
   baseURL,
   secret: process.env.BETTER_AUTH_SECRET!,
   database: drizzleAdapter(db, { provider: "pg", schema }),
-  emailAndPassword: { enabled: true },
+  emailAndPassword: {
+    enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      await sendEmail(
+        user.email,
+        "Reset your RepCard password",
+        `Someone (hopefully you) asked to reset your RepCard password.\n\nOpen this link on your phone to set a new one:\n${url}\n\nIf this wasn't you, ignore this email - your password is unchanged.`,
+      );
+    },
+    resetPasswordTokenExpiresIn: 60 * 60, // 1 hour
+  },
+  // Providers activate only when their credentials exist; the client hides
+  // the matching buttons via EXPO_PUBLIC_AUTH_* flags.
+  socialProviders: {
+    ...(process.env.GOOGLE_CLIENT_ID && {
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      },
+    }),
+    ...(process.env.APPLE_CLIENT_ID && {
+      apple: {
+        clientId: process.env.APPLE_CLIENT_ID,
+        clientSecret: process.env.APPLE_CLIENT_SECRET ?? "",
+      },
+    }),
+  },
   trustedOrigins: [
     "repcard://",
     "exp://",

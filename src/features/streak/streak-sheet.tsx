@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { eachDayOfInterval, endOfWeek, format, isAfter, isSameDay, startOfDay, startOfWeek } from "date-fns";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Image, Modal, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Button from "@/components/ui/button";
@@ -36,8 +36,13 @@ export default function StreakSheet({ summary, visible, onClose }: Props) {
           style={{ paddingBottom: Math.max(insets.bottom, 18) + 10 }}
         >
           <View className="absolute -top-9 left-0 right-0 items-center">
-            <View className="h-[76px] w-[76px] items-center justify-center rounded-full border-4 border-card bg-primary">
-              <Feather color="#052E22" name="zap" size={30} />
+            <View className="h-[76px] w-[76px] items-center justify-center rounded-full border-4 border-card bg-background">
+              <Image
+                accessibilityLabel="Streak flame"
+                className="h-12 w-12"
+                resizeMode="contain"
+                source={require("../../../assets/images/streak-flame.png")}
+              />
             </View>
           </View>
 

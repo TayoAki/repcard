@@ -1,15 +1,16 @@
 import { Feather } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { Platform, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useToken } from "@/theme/use-token";
 
 /**
- * Floating pill tab bar. The center [+] is an action, not a screen -
- * it intercepts the press and opens the workout composer modal.
+ * Floating pill tab bar (Android + fallback). The center [+] is an action,
+ * not a screen - it intercepts the press and opens the composer modal.
  */
-export default function TabLayout() {
+function PillTabs() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const card = useToken("card");
@@ -92,4 +93,45 @@ export default function TabLayout() {
       />
     </Tabs>
   );
+}
+
+
+/** iOS 26 native glass tab bar via SF Symbols. */
+function GlassTabs() {
+  const router = useRouter();
+
+  return (
+    <NativeTabs>
+      <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="house" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="workouts">
+        <NativeTabs.Trigger.Label>Workouts</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="figure.strengthtraining.traditional" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger
+        disabled
+        listeners={{
+          tabPress: () => router.push("/workout/compose"),
+        }}
+        name="create"
+      >
+        <NativeTabs.Trigger.Label>New</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="plus.circle.fill" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="history">
+        <NativeTabs.Trigger.Label>History</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="calendar" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="card">
+        <NativeTabs.Trigger.Label>My Card</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="person.crop.rectangle" />
+      </NativeTabs.Trigger>
+    </NativeTabs>
+  );
+}
+
+export default function TabLayout() {
+  return Platform.OS === "ios" ? <GlassTabs /> : <PillTabs />;
 }

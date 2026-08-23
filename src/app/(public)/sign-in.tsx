@@ -8,6 +8,7 @@ import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-
 import Button from "@/components/ui/button";
 import Field from "@/components/ui/field";
 import Screen from "@/components/ui/screen";
+import SocialButtons from "@/features/auth/social-buttons";
 import { authClient } from "@/lib/auth-client";
 import { completedDraft, hydrationReady } from "@/lib/onboarding-store";
 import { signInSchema, type SignInValues } from "@/lib/validation/auth";
@@ -102,9 +103,17 @@ export default function SignIn() {
             />
           </View>
 
-          <Button busy={pending} className="mt-9" disabled={pending} onPress={submit}>
+          <Link href="/forgot-password" asChild>
+            <Pressable className="mt-3 min-h-11 justify-center self-end px-1">
+              <Text className="font-semibold text-[13px] text-primary">Forgot password?</Text>
+            </Pressable>
+          </Link>
+
+          <Button busy={pending} className="mt-6" disabled={pending} onPress={submit}>
             Sign in
           </Button>
+
+          <SocialButtons />
 
           <View className="mt-auto flex-row items-center justify-center pt-9">
             <Text className="font-sans text-[13px] text-muted-foreground">New here? </Text>
