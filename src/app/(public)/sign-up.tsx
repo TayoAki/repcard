@@ -8,6 +8,7 @@ import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-
 import Button from "@/components/ui/button";
 import Field from "@/components/ui/field";
 import Screen from "@/components/ui/screen";
+import SocialButtons from "@/features/auth/social-buttons";
 import { authClient } from "@/lib/auth-client";
 import { clearDraft, completedDraft, hydrationReady } from "@/lib/onboarding-store";
 import { signUpSchema, type SignUpValues } from "@/lib/validation/auth";
@@ -134,6 +135,8 @@ export default function SignUp() {
           <Button busy={pending} className="mt-9" disabled={pending || formState.isSubmitting} onPress={submit}>
             Create account
           </Button>
+
+          <SocialButtons />
 
           <View className="mt-auto flex-row items-center justify-center pt-9">
             <Text className="font-sans text-[13px] text-muted-foreground">Already have a card? </Text>

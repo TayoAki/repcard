@@ -13,7 +13,9 @@
     "android": {
       "package": "com.tayoaki.repcard",
       "adaptiveIcon": {
-        "backgroundColor": "#10B981"
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#04120C"
       }
     },
     "web": {
@@ -25,9 +27,10 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#022C22",
-          "resizeMode": "contain",
-          "imageWidth": 240
+          "backgroundColor": "#04120C",
+          "image": "./assets/images/splash-logo.png",
+          "imageWidth": 240,
+          "resizeMode": "contain"
         }
       ],
       [
@@ -41,6 +44,7 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "icon": "./assets/images/icon.png"
   }
 }

@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import { cssInterop } from "nativewind";
-import { Pressable, Text, View } from "react-native";
+import { Image, ImageBackground, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Button from "@/components/ui/button";
@@ -17,13 +17,26 @@ export default function Welcome() {
   const router = useRouter();
 
   return (
-    <LinearGradient
+    <ImageBackground
       className="flex-1"
-      colors={["#022C22", "#064E3B", "#0A0F0D"]}
-      start={{ x: 0.1, y: 0 }}
-      end={{ x: 0.9, y: 1 }}
+      resizeMode="cover"
+      source={require("../../../assets/images/welcome-bg.png")}
     >
+      <LinearGradient
+        className="absolute inset-0"
+        colors={["rgba(4,18,12,0.15)", "rgba(4,18,12,0.05)", "rgba(4,18,12,0.75)"]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+      />
       <SafeAreaView className="flex-1 px-6" edges={["top", "bottom"]}>
+        <View className="items-center pt-4">
+          <Image
+            accessibilityLabel="RepCard"
+            className="h-12 w-48"
+            resizeMode="contain"
+            source={require("../../../assets/images/splash-logo.png")}
+          />
+        </View>
         <View className="flex-1 items-center justify-center">
           {/* Placeholder card frame - the real Player Card lands in its own PR */}
           <View className="h-72 w-56 -rotate-3 rounded-3xl border-2 border-emerald-300/40 bg-emerald-950/60 p-4 shadow-lg">
@@ -65,6 +78,6 @@ export default function Welcome() {
           </Link>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </ImageBackground>
   );
 }
