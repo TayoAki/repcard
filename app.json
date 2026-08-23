@@ -35,7 +35,8 @@
         {
           "photosPermission": "Allow RepCard to access photos so you can pick a workout cover."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
