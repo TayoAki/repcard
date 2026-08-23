@@ -35,9 +35,9 @@ export default function HomeTab() {
     queryKey: ["workouts"],
     queryFn: fetchWorkouts,
   });
-  const { data: recent = [] } = useQuery({
+  const { data: recent } = useQuery({
     queryKey: ["sessions", "recent"],
-    queryFn: () => fetchSessions(1),
+    queryFn: () => fetchSessions({ limit: 1 }),
   });
 
   const statCards = [
@@ -46,7 +46,7 @@ export default function HomeTab() {
     { label: "Avg", value: formatDuration(stats?.averageSeconds ?? 0), icon: "bar-chart-2" },
   ] as const;
 
-  const lastSession = recent[0];
+  const lastSession = recent?.items[0];
 
   return (
     <Screen>

@@ -5,6 +5,9 @@ import { z } from "zod";
 import { db, exercises, profiles, workoutExercises, workouts } from "@/db";
 import { auth } from "@/lib/auth";
 import { buildFallbackPlan } from "@/lib/plan-templates";
+import { reportError } from "@/server/log";
+import { allowRequest, tooManyRequests } from "@/server/rate-limit";
+import { serverError } from "@/server/log";
 
 const aiPlanSchema = z.object({
   workouts: z
@@ -36,6 +39,7 @@ const aiPlanSchema = z.object({
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return Response.json({ message: "Unauthorized" }, { status: 401 });
+  if (!allowRequest(`plans:${session.user.id}`, 5, 60_000)) return tooManyRequests();
 
   const [profile] = await db
     .select()
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
         source = "ai";
       }
     } catch (error) {
-      console.warn("AI plan fell back to templates:", error);
+      reportError("plans/generate", error, { fellBack: true });
     }
   }
 
@@ -93,10 +97,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const created: { id: string; name: string; exerciseCount: number }[] = [];
+  let created;
   try {
+    created = await db.transaction(async (tx) => {
+    const rows: { id: string; name: string; exerciseCount: number }[] = [];
     for (const workout of usable) {
-      const [row] = await db
+      const [row] = await tx
         .insert(workouts)
         .values({
           userId: session.user.id,
@@ -106,8 +112,7 @@ export async function POST(request: Request) {
           source: source === "ai" ? "ai_plan" : "manual",
         })
         .returning();
-      created.push({ id: row.id, name: workout.name, exerciseCount: workout.exercises.length });
-      await db.insert(workoutExercises).values(
+      await tx.insert(workoutExercises).values(
         workout.exercises.map((e, position) => ({
           workoutId: row.id,
           exerciseId: e.id,
@@ -117,13 +122,12 @@ export async function POST(request: Request) {
           position,
         })),
       );
+      rows.push({ id: row.id, name: workout.name, exerciseCount: workout.exercises.length });
     }
+      return rows;
+    });
   } catch (error) {
-    // Roll back the whole program: a partial plan plus a retry means duplicates.
-    for (const row of created) {
-      await db.delete(workouts).where(eq(workouts.id, row.id)).catch(() => {});
-    }
-    throw error;
+    return serverError("plans.generate", error);
   }
 
   return Response.json({ source, workouts: created }, { status: 201 });

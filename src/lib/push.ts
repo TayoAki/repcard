@@ -12,6 +12,7 @@ export async function sendPush(tokens: string[], title: string, body: string) {
       body: JSON.stringify(valid.map((to) => ({ to, title, body, sound: "default" }))),
     });
   } catch (error) {
-    console.warn("push send failed:", error);
+    const { reportError } = await import("@/server/log");
+    reportError("push/send", error, { tokens: valid.length });
   }
 }

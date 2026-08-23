@@ -62,8 +62,7 @@ Better Auth tables (`user`, `session`, `account`, `verification`) as generated, 
 
 ## 4. API surface
 
-All routes: session check → Zod-validate params → scope by userId. Multi-statement work
-uses db.batch. Errors are per-operation messages.
+All routes: session check → Zod-validate params → scope by userId. Multi-statement writes use db.transaction. Errors are per-operation messages.
 
 | Route | Methods | Notes |
 |---|---|---|

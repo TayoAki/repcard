@@ -131,8 +131,15 @@ export type SessionListItem = {
   setCount: number;
 };
 
-export const fetchSessions = (limit?: number) =>
-  request<SessionListItem[]>(`/api/sessions${limit ? `?limit=${limit}` : ""}`);
+export type SessionPage = { items: SessionListItem[]; nextCursor: string | null };
+
+export const fetchSessions = (options?: { limit?: number; cursor?: string }) => {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.cursor) params.set("cursor", options.cursor);
+  const qs = params.toString();
+  return request<SessionPage>(`/api/sessions${qs ? `?${qs}` : ""}`);
+};
 export const saveSession = (payload: SaveSessionInput) =>
   request<{ id: string; recordedSets: number }>("/api/sessions", { method: "POST", body: payload });
 

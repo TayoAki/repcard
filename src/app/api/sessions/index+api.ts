@@ -1,9 +1,10 @@
-import { and, count, countDistinct, desc, eq, gt, or, sql } from "drizzle-orm";
+import { and, count, countDistinct, desc, eq, gt, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { battles, db, profiles, user, workoutExercises, workouts, workoutSessions, workoutSessionSets } from "@/db";
 import { auth } from "@/lib/auth";
 import { sendPush } from "@/lib/push";
+import { serverError } from "@/server/log";
 
 const CLOCK_SKEW_MS = 5 * 60 * 1000;
 
@@ -32,13 +33,22 @@ const saveSchema = z
     message: "completedAt cannot be in the future",
   });
 
+const cursorSchema = z.iso.datetime();
+
+/** Cursor-paginated history: `?cursor=` is the previous page's nextCursor. */
 export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return Response.json({ message: "Unauthorized" }, { status: 401 });
 
-  const raw = new URL(request.url).searchParams.get("limit");
-  const limit = raw ? z.coerce.number().int().min(1).max(50).safeParse(raw) : null;
+  const params = new URL(request.url).searchParams;
+  const rawLimit = params.get("limit");
+  const limit = rawLimit ? z.coerce.number().int().min(1).max(50).safeParse(rawLimit) : null;
   if (limit && !limit.success) return Response.json({ message: "Invalid limit" }, { status: 400 });
+  const pageSize = limit?.success ? limit.data : 20;
+
+  const rawCursor = params.get("cursor");
+  const cursor = rawCursor ? cursorSchema.safeParse(rawCursor) : null;
+  if (cursor && !cursor.success) return Response.json({ message: "Invalid cursor" }, { status: 400 });
 
   // leftJoin: sessions of deleted workouts still belong in history
   const query = db
@@ -55,11 +65,22 @@ export async function GET(request: Request) {
     .from(workoutSessions)
     .leftJoin(workouts, eq(workouts.id, workoutSessions.workoutId))
     .leftJoin(workoutSessionSets, eq(workoutSessionSets.sessionId, workoutSessions.id))
-    .where(eq(workoutSessions.userId, session.user.id))
+    .where(
+      and(
+        eq(workoutSessions.userId, session.user.id),
+        cursor?.success ? lt(workoutSessions.completedAt, new Date(cursor.data)) : undefined,
+      ),
+    )
     .groupBy(workoutSessions.id, workouts.id)
     .orderBy(desc(workoutSessions.completedAt));
 
-  return Response.json(limit?.success ? await query.limit(limit.data) : await query);
+  // Fetch one extra row to learn whether another page exists.
+  const rows = await query.limit(pageSize + 1);
+  const items = rows.slice(0, pageSize);
+  const nextCursor =
+    rows.length > pageSize ? items[items.length - 1].completedAt.toISOString() : null;
+
+  return Response.json({ items, nextCursor });
 }
 
 export async function POST(request: Request) {
@@ -101,34 +122,34 @@ export async function POST(request: Request) {
     return true;
   });
 
-  const [created] = await db
-    .insert(workoutSessions)
-    .values({
-      userId: session.user.id,
-      workoutId,
-      startedAt: new Date(startedAt),
-      completedAt: new Date(completedAt),
-      durationSeconds,
-    })
-    .returning();
-
-  if (valid.length > 0) {
-    try {
-      await db.insert(workoutSessionSets).values(
+  let created;
+  try {
+    created = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(workoutSessions)
+      .values({
+        userId: session.user.id,
+        workoutId,
+        startedAt: new Date(startedAt),
+        completedAt: new Date(completedAt),
+        durationSeconds,
+      })
+      .returning();
+    if (valid.length > 0) {
+      await tx.insert(workoutSessionSets).values(
         valid.map((s) => ({
-          sessionId: created.id,
+          sessionId: row.id,
           exerciseId: s.exerciseId,
           setNumber: s.setNumber,
           reps: s.reps,
           weight: s.weight ?? null,
         })),
       );
-    } catch (error) {
-      // No transactions on the Neon HTTP driver: compensate so a failed
-      // sets-insert never strands an empty session (or duplicates on retry).
-      await db.delete(workoutSessions).where(eq(workoutSessions.id, created.id));
-      throw error;
     }
+      return row;
+    });
+  } catch (error) {
+    return serverError("sessions.POST", error);
   }
 
   notifyRivals(session.user.id, session.user.name).catch(() => {});

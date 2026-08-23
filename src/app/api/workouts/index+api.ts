@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db, exercises, workoutExercises, workouts } from "@/db";
 import { auth } from "@/lib/auth";
 import { storeCoverImage } from "@/lib/upload";
+import { serverError } from "@/server/log";
 
 export const workoutPayloadSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -64,15 +65,16 @@ export async function POST(request: Request) {
     ? await storeCoverImage(image, `cover-${session.user.id}-${Date.now()}.jpg`)
     : null;
 
-  const [created] = await db
-    .insert(workouts)
-    .values({ userId: session.user.id, name, description: description || null, image: cover })
-    .returning();
-
+  let created;
   try {
-    await db.insert(workoutExercises).values(
+    created = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(workouts)
+      .values({ userId: session.user.id, name, description: description || null, image: cover })
+      .returning();
+    await tx.insert(workoutExercises).values(
       items.map((item, position) => ({
-        workoutId: created.id,
+        workoutId: row.id,
         exerciseId: item.id,
         sets: item.sets,
         reps: item.reps,
@@ -81,10 +83,10 @@ export async function POST(request: Request) {
         position,
       })),
     );
+      return row;
+    });
   } catch (error) {
-    // No transactions on the Neon HTTP driver: never leave an empty workout.
-    await db.delete(workouts).where(eq(workouts.id, created.id));
-    throw error;
+    return serverError("workouts.POST", error);
   }
 
   return Response.json({ ...created, coverStored: !image || cover !== null }, { status: 201 });

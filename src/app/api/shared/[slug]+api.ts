@@ -2,11 +2,13 @@ import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db, exercises, workoutExercises, workouts } from "@/db";
+import { allowRequest, clientIp, tooManyRequests } from "@/server/rate-limit";
 
 const slugSchema = z.string().regex(/^[a-z0-9]{4,12}$/);
 
 /** PUBLIC: shared-workout JSON - powers the web page and in-app import. */
-export async function GET(_request: Request, { slug }: Record<string, string>) {
+export async function GET(request: Request, { slug }: Record<string, string>) {
+  if (!allowRequest(`public:shared:${clientIp(request)}`, 60, 60_000)) return tooManyRequests();
   if (!slugSchema.safeParse(slug).success) {
     return Response.json({ message: "Not found" }, { status: 404 });
   }
