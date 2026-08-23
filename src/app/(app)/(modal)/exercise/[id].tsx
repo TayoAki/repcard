@@ -1,12 +1,14 @@
 import { Feather } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import EmptyState from "@/components/ui/empty-state";
 import Screen from "@/components/ui/screen";
 import Skeleton from "@/components/ui/skeleton";
+import CoachSheet from "@/features/coach/coach-sheet";
 import { fetchExercise } from "@/lib/api";
 import { useToken } from "@/theme/use-token";
 
@@ -18,6 +20,7 @@ export default function ExerciseDetail() {
   const mutedFg = useToken("mutedFg");
   const primary = useToken("primary");
 
+  const [coachOpen, setCoachOpen] = useState(false);
   const { data: exercise, isError, isPending, refetch } = useQuery({
     enabled: Boolean(id),
     queryKey: ["exercise", id],
@@ -104,6 +107,15 @@ export default function ExerciseDetail() {
             ))}
           </View>
 
+          <Pressable
+            className="mt-6 min-h-14 flex-row items-center rounded-2xl border border-primary bg-accent px-4 active:opacity-80 dark:bg-accent/15"
+            onPress={() => setCoachOpen(true)}
+          >
+            <Feather color={primary} name="message-circle" size={19} />
+            <Text className="ml-3 flex-1 font-semibold text-[14px] text-primary">Ask the coach</Text>
+            <Feather color={primary} name="chevron-right" size={19} />
+          </Pressable>
+
           <Text className="mt-7 font-bold text-[17px] text-foreground">How to perform</Text>
           <View className="mt-3 gap-3">
             {exercise.instructions.map((step, index) => (
@@ -119,6 +131,12 @@ export default function ExerciseDetail() {
           </View>
         </View>
       </ScrollView>
+      <CoachSheet
+        exerciseId={exercise.id}
+        exerciseName={exercise.name}
+        onClose={() => setCoachOpen(false)}
+        visible={coachOpen}
+      />
     </Screen>
   );
 }
