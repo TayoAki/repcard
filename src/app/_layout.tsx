@@ -13,6 +13,7 @@ import { useColorScheme } from "nativewind";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
+import { authClient } from "@/lib/auth-client";
 import { palette, themeVars } from "@/theme/tokens";
 import "../global.css";
 
@@ -34,7 +35,8 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
-  const ready = fontsLoaded || Boolean(fontError);
+  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const ready = (fontsLoaded || Boolean(fontError)) && !sessionPending;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -48,9 +50,12 @@ export default function RootLayout() {
         <View className="flex-1" style={[themeVars[scheme], { backgroundColor: palette[scheme].bg }]}>
           <StatusBar style={scheme === "dark" ? "light" : "dark"} />
           <Stack screenOptions={{ headerShown: false }}>
-            {/* Auth gating (Stack.Protected) arrives with the auth PR. */}
-            <Stack.Screen name="(public)" />
-            <Stack.Screen name="(app)" />
+            <Stack.Protected guard={!session}>
+              <Stack.Screen name="(public)" />
+            </Stack.Protected>
+            <Stack.Protected guard={Boolean(session)}>
+              <Stack.Screen name="(app)" />
+            </Stack.Protected>
           </Stack>
         </View>
       </ThemeProvider>

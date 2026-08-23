@@ -1,8 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { cssInterop } from "nativewind";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Button from "@/components/ui/button";
@@ -50,11 +50,20 @@ export default function Welcome() {
 
         <Button
           after={<Feather color="#052E22" name="arrow-right" size={20} />}
-          onPress={() => router.push("/(app)/(tabs)")}
+          onPress={() =>
+            router.push({ pathname: "/onboarding/[step]", params: { step: "gender" } })
+          }
         >
           Get Started
         </Button>
-        <View className="h-3" />
+        <View className="mt-3 flex-row items-center justify-center">
+          <Text className="font-sans text-[13px] text-emerald-100/60">Already have a card? </Text>
+          <Link href="/sign-in" asChild>
+            <Pressable className="min-h-11 justify-center px-1">
+              <Text className="font-semibold text-[13px] text-emerald-300">Sign in</Text>
+            </Pressable>
+          </Link>
+        </View>
       </SafeAreaView>
     </LinearGradient>
   );
