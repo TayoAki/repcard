@@ -205,3 +205,12 @@ export type CoachCues = { source: "ai" | "dataset"; cues: string[]; mistake: str
 
 export const fetchCoachCues = (exerciseId: string) =>
   request<CoachCues>(`/api/exercises/${exerciseId}/coach`);
+
+// ----- Plans ----------------------------------------------------------------
+
+export type GeneratedPlan = {
+  source: "ai" | "template";
+  workouts: { id: string; name: string; exerciseCount: number }[];
+};
+
+export const generatePlan = () => request<GeneratedPlan>("/api/plans/generate", { method: "POST", body: {} });
