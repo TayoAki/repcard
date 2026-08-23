@@ -99,3 +99,36 @@ export const updateWorkout = (id: string, payload: WorkoutPayload) =>
   request<{ message: string }>(`/api/workouts/${id}`, { method: "PATCH", body: payload });
 export const deleteWorkout = (id: string) =>
   request<{ message: string }>(`/api/workouts/${id}`, { method: "DELETE" });
+
+// ----- Sessions -------------------------------------------------------------
+
+export type SessionSetInput = {
+  exerciseId: string;
+  setNumber: number;
+  reps: number;
+  weight?: number;
+};
+
+export type SaveSessionInput = {
+  workoutId: string;
+  startedAt: string;
+  completedAt: string;
+  durationSeconds: number;
+  sets: SessionSetInput[];
+};
+
+export type SessionListItem = {
+  id: string;
+  workoutId: string;
+  workoutName: string;
+  image: string | null;
+  completedAt: string;
+  durationSeconds: number;
+  exerciseCount: number;
+  setCount: number;
+};
+
+export const fetchSessions = (limit?: number) =>
+  request<SessionListItem[]>(`/api/sessions${limit ? `?limit=${limit}` : ""}`);
+export const saveSession = (payload: SaveSessionInput) =>
+  request<{ id: string; recordedSets: number }>("/api/sessions", { method: "POST", body: payload });
