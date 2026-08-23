@@ -15,7 +15,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx --env-file=.env src/db/seed/index.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@better-auth/expo": "^1.7.1",
@@ -61,11 +62,13 @@
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.10.1",
     "tailwindcss": "^3.4.19",
+    "ws": "^8.21.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
     "@types/react": "~19.2.2",
+    "@types/ws": "^8.18.1",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.23.12",
     "typescript": "~6.0.3"

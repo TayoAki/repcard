@@ -3,11 +3,13 @@ import { z } from "zod";
 
 import { db, exercises, workoutExercises, workouts } from "@/db";
 import { escapeHtml, htmlPage } from "@/lib/web/page";
+import { allowRequest, clientIp, tooManyRequests } from "@/server/rate-limit";
 
 const slugSchema = z.string().regex(/^[a-z0-9]{4,12}$/);
 
 /** PUBLIC HTML: shared workout page with an import deep link. */
-export async function GET(_request: Request, { slug }: Record<string, string>) {
+export async function GET(request: Request, { slug }: Record<string, string>) {
+  if (!allowRequest(`public:w:${clientIp(request)}`, 60, 60_000)) return tooManyRequests();
   if (!slugSchema.safeParse(slug).success) return new Response("Not found", { status: 404 });
 
   const [workout] = await db

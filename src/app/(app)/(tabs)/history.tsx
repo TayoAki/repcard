@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { isSameDay, startOfDay } from "date-fns";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -18,10 +18,14 @@ export default function HistoryTab() {
   const mutedFg = useToken("mutedFg");
   const [filterDay, setFilterDay] = useState<Date | null>(null);
 
-  const { data: sessions = [], isError, isPending, refetch } = useQuery({
-    queryKey: ["sessions"],
-    queryFn: () => fetchSessions(),
-  });
+  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
+    useInfiniteQuery({
+      queryKey: ["sessions"],
+      queryFn: ({ pageParam }) => fetchSessions({ cursor: pageParam ?? undefined }),
+      initialPageParam: null as string | null,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    });
+  const sessions = data?.pages.flatMap((page) => page.items) ?? [];
 
   const visible = filterDay
     ? sessions.filter((s) => isSameDay(new Date(s.completedAt), filterDay))
@@ -88,6 +92,13 @@ export default function HistoryTab() {
               body={filterDay ? undefined : "Finish a workout and it lands here."}
             />
           )
+        }
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+        }}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          isFetchingNextPage ? <Skeleton className="mt-3 h-[88px] rounded-2xl" /> : null
         }
         renderItem={({ item }) => (
           <TouchableOpacity

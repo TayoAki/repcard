@@ -49,8 +49,10 @@ battles, and template plans all work locally. Optional keys unlock more:
 - **Rating engine** (`src/lib/rating.ts`) and **streak engine** (`src/lib/streak.ts`) are
   pure, unit-tested functions; the card API assembles their inputs with SQL aggregates.
 - Weights are stored **canonically in kg** and converted at render from the profile's unit.
-- The API's dual driver (`pg` locally, Neon HTTP in prod) restricts app code to the shared
-  query surface — documented in `src/db/index.ts`.
+- The API's dual driver (`pg` locally, Neon WebSocket in prod) supports real
+  **transactions** on both paths; `db.batch` stays off-limits (`src/db/index.ts`).
+- Abusable surfaces (auth, AI, public pages) are rate-limited; API errors log as
+  structured JSON with a provider-neutral `reportError` seam.
 - Every user-facing string on the public HTML pages is escaped (XSS-tested in PR 11).
 
 ## Roadmap

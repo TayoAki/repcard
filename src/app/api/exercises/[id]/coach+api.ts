@@ -4,6 +4,8 @@ import { z } from "zod";
 
 import { db, exercises } from "@/db";
 import { auth } from "@/lib/auth";
+import { reportError } from "@/server/log";
+import { allowRequest, tooManyRequests } from "@/server/rate-limit";
 
 const idSchema = z.uuid();
 
@@ -30,6 +32,7 @@ const cuesSchema = z.object({
 export async function GET(request: Request, { id }: Record<string, string>) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return Response.json({ message: "Unauthorized" }, { status: 401 });
+  if (!allowRequest(`coach:${session.user.id}`, 10, 60_000)) return tooManyRequests();
   if (!idSchema.safeParse(id).success) {
     return Response.json({ message: "Exercise not found" }, { status: 404 });
   }
@@ -62,7 +65,7 @@ export async function GET(request: Request, { id }: Record<string, string>) {
       return Response.json({ source: "ai" as const, ...result });
     }
   } catch (error) {
-    console.warn("AI coach fell back to dataset:", error);
+    reportError("exercises/coach", error, { fellBack: true });
   }
   return Response.json(fallback);
 }
