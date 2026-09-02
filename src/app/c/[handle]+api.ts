@@ -27,7 +27,7 @@ export async function GET(request: Request, { handle }: Record<string, string>) 
     [String(card.stats.sessions28), "SESSIONS 28D"],
     [`${(card.stats.volume28Kg / 1000).toFixed(1)}t`, "VOLUME 28D"],
     [`${card.streak}d`, "STREAK"],
-    [`${card.bestStreak}d`, "BEST RUN"],
+    [`${card.bestStreak}d`, "BEST STREAK"],
     [String(card.stats.prCount30), "PRS 30D"],
     [String(card.stats.muscleGroups28), "MUSCLES"],
   ];
