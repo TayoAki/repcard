@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
+import { Alert } from "react-native";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { Platform, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -60,7 +61,11 @@ function PillTabs() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-            router.push("/workout/compose");
+            Alert.alert("What are we logging?", undefined, [
+              { text: "New Workout", onPress: () => router.push("/workout/compose") },
+              { text: "Log Run", onPress: () => router.push("/run/log") },
+              { text: "Cancel", style: "cancel" },
+            ]);
           },
         }}
         options={{
@@ -113,7 +118,13 @@ function GlassTabs() {
       <NativeTabs.Trigger
         disabled
         listeners={{
-          tabPress: () => router.push("/workout/compose"),
+          tabPress: () => {
+            Alert.alert("What are we logging?", undefined, [
+              { text: "New Workout", onPress: () => router.push("/workout/compose") },
+              { text: "Log Run", onPress: () => router.push("/run/log") },
+              { text: "Cancel", style: "cancel" },
+            ]);
+          },
         }}
         name="create"
       >

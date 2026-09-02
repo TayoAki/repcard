@@ -9,13 +9,14 @@ import EmptyState from "@/components/ui/empty-state";
 import Screen from "@/components/ui/screen";
 import Skeleton from "@/components/ui/skeleton";
 import WeekStrip from "@/components/week-strip";
-import { fetchSessions } from "@/lib/api";
+import { fetchRuns, fetchSessions, type RunItem, type SessionListItem } from "@/lib/api";
 import { formatDuration, formatSessionDate } from "@/lib/format";
 import { useToken } from "@/theme/use-token";
 
 export default function HistoryTab() {
   const router = useRouter();
   const mutedFg = useToken("mutedFg");
+  const primary = useToken("primary");
   const [filterDay, setFilterDay] = useState<Date | null>(null);
 
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
@@ -26,11 +27,29 @@ export default function HistoryTab() {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     });
   const sessions = data?.pages.flatMap((page) => page.items) ?? [];
+  const { data: runData, fetchNextPage: fetchMoreRuns, hasNextPage: moreRuns } = useInfiniteQuery({
+    queryKey: ["runs"],
+    queryFn: ({ pageParam }) => fetchRuns({ cursor: pageParam ?? undefined }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+  });
+  const runItems = runData?.pages.flatMap((page) => page.items) ?? [];
+
+  type FeedRow =
+    | { kind: "workout"; completedAt: string; item: SessionListItem }
+    | { kind: "run"; completedAt: string; item: RunItem };
+  const feed: FeedRow[] = [
+    ...sessions.map((item) => ({ kind: "workout" as const, completedAt: item.completedAt, item })),
+    ...runItems.map((item) => ({ kind: "run" as const, completedAt: item.completedAt, item })),
+  ].sort((a, b) => b.completedAt.localeCompare(a.completedAt));
 
   const visible = filterDay
-    ? sessions.filter((s) => isSameDay(new Date(s.completedAt), filterDay))
-    : sessions;
-  const totalSeconds = visible.reduce((sum, s) => sum + s.durationSeconds, 0);
+    ? feed.filter((row) => isSameDay(new Date(row.completedAt), filterDay))
+    : feed;
+  const totalSeconds = visible.reduce(
+    (sum, row) => sum + row.item.durationSeconds,
+    0,
+  );
 
   return (
     <Screen>
@@ -38,12 +57,12 @@ export default function HistoryTab() {
         contentContainerClassName="px-5 pb-28"
         data={isPending ? [] : visible}
         ItemSeparatorComponent={() => <View className="h-3" />}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(row) => `${row.kind}:${row.item.id}`}
         ListHeaderComponent={
           <View>
             <Text className="pt-3 font-bold text-2xl tracking-tight text-foreground">History</Text>
             <WeekStrip
-              markedDates={sessions.map((s) => new Date(s.completedAt))}
+              markedDates={feed.map((row) => new Date(row.completedAt))}
               onChange={setFilterDay}
               value={filterDay ?? startOfDay(new Date())}
             />
@@ -95,39 +114,65 @@ export default function HistoryTab() {
         }
         onEndReached={() => {
           if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+          if (moreRuns) fetchMoreRuns();
         }}
         onEndReachedThreshold={0.4}
         ListFooterComponent={
           isFetchingNextPage ? <Skeleton className="mt-3 h-[88px] rounded-2xl" /> : null
         }
-        renderItem={({ item }) => (
+        renderItem={({ item: row }) =>
+          row.kind === "run" ? (
+            <View className="flex-row items-center rounded-2xl border border-border bg-card p-3">
+              <View className="h-16 w-20 items-center justify-center rounded-xl bg-accent dark:bg-accent/20">
+                <Feather color={primary} name="wind" size={20} />
+              </View>
+              <View className="ml-3 flex-1">
+                <Text className="font-semibold text-[14px] text-foreground">
+                  Run · {(row.item.distanceMeters / 1000).toFixed(row.item.distanceMeters % 1000 === 0 ? 0 : 1)} km
+                </Text>
+                <Text className="mt-0.5 font-sans text-[11.5px] text-muted-foreground">
+                  {formatSessionDate(row.item.completedAt)}
+                </Text>
+                <Text className="mt-0.5 font-sans text-[11.5px] text-muted-foreground">
+                  {formatDuration(row.item.durationSeconds)} · {formatPace(row.item)} /km
+                  {row.item.note ? ` · ${row.item.note}` : ""}
+                </Text>
+              </View>
+            </View>
+          ) : (
           <TouchableOpacity
             className="flex-row items-center rounded-2xl border border-border bg-card p-3 active:bg-muted"
-            onPress={() => router.push({ pathname: "/session/[id]", params: { id: item.id } })}
+            onPress={() => router.push({ pathname: "/session/[id]", params: { id: row.item.id } })}
           >
-            {item.image ? (
-              <Image className="h-16 w-20 rounded-xl bg-muted" resizeMode="cover" source={{ uri: item.image }} />
+            {row.item.image ? (
+              <Image className="h-16 w-20 rounded-xl bg-muted" resizeMode="cover" source={{ uri: row.item.image }} />
             ) : (
               <View className="h-16 w-20 items-center justify-center rounded-xl bg-muted">
                 <Feather color={mutedFg} name="image" size={18} />
               </View>
             )}
             <View className="ml-3 flex-1">
-              <Text className="font-semibold text-[14px] text-foreground">{item.workoutName}</Text>
+              <Text className="font-semibold text-[14px] text-foreground">{row.item.workoutName}</Text>
               <Text className="mt-0.5 font-sans text-[11.5px] text-muted-foreground">
-                {formatSessionDate(item.completedAt)}
+                {formatSessionDate(row.item.completedAt)}
               </Text>
               <Text className="mt-0.5 font-sans text-[11.5px] text-muted-foreground">
-                {item.exerciseCount} exercises · {item.setCount} sets · {formatDuration(item.durationSeconds)}
+                {row.item.exerciseCount} exercises · {row.item.setCount} sets · {formatDuration(row.item.durationSeconds)}
               </Text>
             </View>
             <Feather color={mutedFg} name="chevron-right" size={19} />
           </TouchableOpacity>
-        )}
+          )
+        }
         showsVerticalScrollIndicator={false}
       />
     </Screen>
   );
+}
+
+function formatPace(run: RunItem) {
+  const secPerKm = run.durationSeconds / (run.distanceMeters / 1000);
+  return `${Math.floor(secPerKm / 60)}:${String(Math.round(secPerKm % 60)).padStart(2, "0")}`;
 }
 
 function Summary({ label, value }: { label: string; value: string }) {

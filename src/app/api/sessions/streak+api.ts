@@ -1,17 +1,25 @@
 import { eq } from "drizzle-orm";
 
-import { db, workoutSessions } from "@/db";
+import { db, runs, workoutSessions } from "@/db";
 import { auth } from "@/lib/auth";
 
-/** All session dates for the streak engine (client computes the summary). */
+/** All training dates - workout sessions AND runs - for the streak engine. */
 export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return Response.json({ message: "Unauthorized" }, { status: 401 });
 
-  const rows = await db
-    .select({ completedAt: workoutSessions.completedAt })
-    .from(workoutSessions)
-    .where(eq(workoutSessions.userId, session.user.id));
+  const [sessionRows, runRows] = await Promise.all([
+    db
+      .select({ completedAt: workoutSessions.completedAt })
+      .from(workoutSessions)
+      .where(eq(workoutSessions.userId, session.user.id)),
+    db
+      .select({ completedAt: runs.completedAt })
+      .from(runs)
+      .where(eq(runs.userId, session.user.id)),
+  ]);
 
-  return Response.json({ dates: rows.map((r) => r.completedAt.toISOString()) });
+  return Response.json({
+    dates: [...sessionRows, ...runRows].map((r) => r.completedAt.toISOString()),
+  });
 }

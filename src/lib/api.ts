@@ -234,6 +234,8 @@ export type CardData = {
     volume28Kg: number;
     prCount30: number;
     muscleGroups28: number;
+    distance28Meters: number;
+    runs28: number;
   };
 };
 
@@ -282,3 +284,29 @@ export const createBattle = () => request<BattleListItem>("/api/battles", { meth
 export const joinBattle = (code: string) =>
   request<{ id: string }>("/api/battles/join", { method: "POST", body: { code } });
 export const fetchBattle = (id: string) => request<BattleDetail>(`/api/battles/${id}`);
+
+// ----- Runs -----------------------------------------------------------------
+
+export type RunItem = {
+  id: string;
+  distanceMeters: number;
+  durationSeconds: number;
+  note: string | null;
+  completedAt: string;
+};
+
+export type RunPage = { items: RunItem[]; nextCursor: string | null };
+
+export const fetchRuns = (options?: { limit?: number; cursor?: string }) => {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.cursor) params.set("cursor", options.cursor);
+  const qs = params.toString();
+  return request<RunPage>(`/api/runs${qs ? `?${qs}` : ""}`);
+};
+
+export const logRun = (payload: {
+  distanceMeters: number;
+  durationSeconds: number;
+  note?: string;
+}) => request<RunItem>("/api/runs", { method: "POST", body: payload });
