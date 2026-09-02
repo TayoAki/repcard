@@ -187,16 +187,29 @@ export default function ComposeWorkout() {
         return;
       }
       setItems((prev) => {
-        if (prev.length > 0) return prev;
+        // Token re-checked at commit time: Cancel/unmount bump the token, so
+        // a preset resolving after the draft was cleared can never repopulate it.
+        if (requestId !== presetRequestRef.current || prev.length > 0) return prev;
         presetAppliedRef.current = { id: requestId, name: preset.name };
         return preset.exercises;
       });
     } catch (error) {
-      Alert.alert(`Could not load ${label}`, error instanceof Error ? error.message : "Try again");
+      if (requestId === presetRequestRef.current) {
+        Alert.alert(`Could not load ${label}`, error instanceof Error ? error.message : "Try again");
+      }
     } finally {
       if (requestId === presetRequestRef.current) setPresetLoading(null);
     }
   };
+
+  // The draft provider outlives this screen: on unmount, invalidate any
+  // in-flight preset so a late response can't write into the shared draft.
+  useEffect(() => {
+    return () => {
+      presetRequestRef.current += 1;
+      presetAppliedRef.current = null;
+    };
+  }, []);
 
   // Completes a preset application AFTER the draft state actually commits:
   // fills the name (only if still blank) and fires the success haptic.
@@ -225,7 +238,15 @@ export default function ComposeWorkout() {
       >
         <View className="flex-grow px-5 pb-8 pt-3">
           <View className="flex-row items-center justify-between">
-            <Pressable className="min-h-11 justify-center pr-3" onPress={() => { setItems([]); router.back(); }}>
+            <Pressable
+              className="min-h-11 justify-center pr-3"
+              onPress={() => {
+                presetRequestRef.current += 1; // invalidate any in-flight preset
+                presetAppliedRef.current = null;
+                setItems([]);
+                router.back();
+              }}
+            >
               <Text className="font-medium text-[13px] text-destructive">Cancel</Text>
             </Pressable>
             <Text className="font-bold text-[16px] text-foreground">
