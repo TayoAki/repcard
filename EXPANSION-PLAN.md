@@ -24,6 +24,7 @@ completes them. Estimates are focused build-days, not calendar days.
 | ☐ | A2 · Runs: log distance/duration, count toward streaks + day stats + history | 1d | `runs` table + POST/GET; run rows typed in history; streak engine counts run days; card gains 28d distance stat |
 | ☐ | A3 · Leaderboards: weekly + all-time (sessions, volume, distance, OVR) | 1d | Global boards over handles, `leaderboardOptOut` respected, own row pinned; entry from Home + Card tab |
 | ☐ | A4 · Sharing prominence | 0.5d | Share buttons on workout cards + session box score; battle invites as `repcard://battle/join/CODE` deep links with web fallback page |
+| ⏸ | A5 · Anonymous accounts → claim on share (pending product decision) | 1.5d | Better Auth anonymous plugin: instant use with a device-backed account, no signup wall; "claim" attaches an email at first share/battle; unblocks clean install→signup attribution for D1. Cloud-first is preserved (data never local); this replaces "on-device free tier" as the low-friction path. **Not started — awaiting go-ahead** |
 
 ## Phase B — Monetization (the #1 viral gap; everything measurable depends on it)
 
@@ -48,8 +49,8 @@ Pro anchor rationale: the Player Card is the status asset — Pro makes the card
 
 | ✔ | Item | Est | Acceptance criteria |
 |---|---|---|---|
-| ☐ | D1 · Referral codes on share slugs (`?ref=`) + attribution table | 1d | Install/import/signup attributed to code; codes mintable per user |
-| ☐ | D2 · Creator dashboard page (public `/creator/[code]`: installs, imports, signups) | 0.5d | Live counts, no auth needed for the creator's own code page |
+| ☐ | D1 · Referral codes + attribution (two-tier) | 2d | **Web tier (v1, 1d):** `?ref=` on share slugs attributes *import* and *signup-from-web* events; codes mintable per user; idempotent event writes keyed on (code, event, subject). **App-install tier (heavy, deferred):** attributing a *store install* to a code needs deferred deep linking (Branch/Adjust-class) + first-launch capture + an attribution window + anonymous→account linking (see A5). Spec'd here, built only after A5 lands — v1 does NOT promise install attribution |
+| ☐ | D2 · Creator dashboard page (public `/creator/[code]`: imports, signups, installs-when-available) | 0.5d | Live counts, no auth for the creator's own code page; installs column shows only once D1's app-install tier ships |
 | ☐ | D3 · Share-asset polish for creator content (watermarked card exports) | 0.5d | Card share PNG carries subtle @handle + repcard watermark |
 
 ## Phase E — Retention mechanics
