@@ -21,7 +21,7 @@ export default function ExerciseLibrary() {
 
   const { data: items = [], isError, isPending, refetch } = useQuery({
     queryKey: ["exercises", search],
-    queryFn: () => fetchExercises(search || undefined),
+    queryFn: () => fetchExercises({ search: search || undefined }),
   });
 
   return (

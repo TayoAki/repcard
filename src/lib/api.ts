@@ -40,8 +40,39 @@ export type ExerciseDetail = ExerciseListItem & {
   category: string;
 };
 
-export const fetchExercises = (search?: string) =>
-  request<ExerciseListItem[]>(`/api/exercises${search ? `?search=${encodeURIComponent(search)}` : ""}`);
+export type ExerciseFilters = {
+  search?: string;
+  muscle?: string;
+  equipment?: string;
+  difficulty?: string;
+};
+
+export type ExerciseFacets = { muscles: string[]; equipment: string[]; difficulties: string[] };
+
+export const fetchExercises = (filters: ExerciseFilters = {}) => {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);
+  const qs = params.toString();
+  return request<ExerciseListItem[]>(`/api/exercises${qs ? `?${qs}` : ""}`);
+};
+
+export const fetchExerciseFacets = () => request<ExerciseFacets>("/api/exercises/facets");
+
+export type PresetWorkout = {
+  name: string;
+  exercises: {
+    id: string;
+    name: string;
+    image: string | null;
+    muscles: string;
+    sets: number;
+    reps: number;
+    targetWeight: number | null;
+    restSeconds: number;
+  }[];
+};
+
+export const fetchPreset = (key: string) => request<PresetWorkout>(`/api/presets/${key}`);
 
 export const fetchExercise = (id: string) => request<ExerciseDetail>(`/api/exercises/${id}`);
 

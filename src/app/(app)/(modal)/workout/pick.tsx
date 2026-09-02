@@ -5,11 +5,12 @@ import { useState } from "react";
 import { FlatList, Image, Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import EmptyState from "@/components/ui/empty-state";
+import FilterChips from "@/components/filter-chips";
 import Screen from "@/components/ui/screen";
 import Skeleton from "@/components/ui/skeleton";
 import { DEFAULT_PRESCRIPTION, useWorkoutDraft } from "@/contexts/workout-draft";
 import { useDebounce } from "@/hooks/use-debounce";
-import { fetchExercises, type ExerciseListItem } from "@/lib/api";
+import { fetchExerciseFacets, fetchExercises, type ExerciseListItem } from "@/lib/api";
 import { useToken } from "@/theme/use-token";
 
 /** Exercise picker: taps toggle selection; the row body opens catalog detail. */
@@ -19,11 +20,25 @@ export default function PickExercises() {
   const primary = useToken("primary");
   const [query, setQuery] = useState("");
   const search = useDebounce(query.trim());
+  const [muscle, setMuscle] = useState<string | null>(null);
+  const [equipment, setEquipment] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<string | null>(null);
   const [selected, setSelected] = useWorkoutDraft();
 
+  const { data: facets } = useQuery({
+    queryKey: ["exercise-facets"],
+    queryFn: fetchExerciseFacets,
+    staleTime: Infinity,
+  });
   const { data: items = [], isError, isPending, refetch } = useQuery({
-    queryKey: ["exercises", search],
-    queryFn: () => fetchExercises(search || undefined),
+    queryKey: ["exercises", search, muscle, equipment, difficulty],
+    queryFn: () =>
+      fetchExercises({
+        search: search || undefined,
+        muscle: muscle ?? undefined,
+        equipment: equipment ?? undefined,
+        difficulty: difficulty ?? undefined,
+      }),
   });
 
   const toggle = (exercise: ExerciseListItem) =>
@@ -71,7 +86,10 @@ export default function PickExercises() {
                 value={query}
               />
             </View>
-            <Text className="mb-2 font-sans text-[12px] text-muted-foreground">
+            <FilterChips label="Muscle" onSelect={setMuscle} options={facets?.muscles ?? []} selected={muscle} />
+            <FilterChips label="Equipment" onSelect={setEquipment} options={facets?.equipment ?? []} selected={equipment} />
+            <FilterChips label="Difficulty" onSelect={setDifficulty} options={facets?.difficulties ?? []} selected={difficulty} />
+            <Text className="mb-2 mt-1 font-sans text-[12px] text-muted-foreground">
               {selected.length} selected
             </Text>
           </View>

@@ -11,6 +11,7 @@ import Screen from "@/components/ui/screen";
 import { useWorkoutDraft, type DraftExercise } from "@/contexts/workout-draft";
 import {
   createWorkout,
+  fetchPreset,
   fetchWorkout,
   updateWorkout,
   type WorkoutPayload,
@@ -166,6 +167,29 @@ export default function ComposeWorkout() {
     setItems((prev) => prev.filter((e) => e.id !== id));
   };
 
+  const [presetLoading, setPresetLoading] = useState<string | null>(null);
+  const applyPreset = async (key: string, label: string) => {
+    setPresetLoading(key);
+    try {
+      const preset = await fetchPreset(key);
+      if (preset.exercises.length === 0) {
+        Alert.alert("Nothing to add", "The catalog has no matches for this split.");
+        return;
+      }
+      touchedRef.current.items = true;
+      setItems(preset.exercises);
+      if (!name.trim()) {
+        touchedRef.current.name = true;
+        setName(preset.name);
+      }
+      haptic.success();
+    } catch (error) {
+      Alert.alert(`Could not load ${label}`, error instanceof Error ? error.message : "Try again");
+    } finally {
+      setPresetLoading(null);
+    }
+  };
+
   return (
     <Screen>
       <KeyboardAwareScrollView
@@ -247,6 +271,38 @@ export default function ComposeWorkout() {
               <Text className="font-bold text-[16px] text-foreground">Exercises</Text>
               <Text className="font-sans text-[12px] text-muted-foreground">{items.length} added</Text>
             </View>
+
+            {items.length === 0 && !editId ? (
+              <View className="mt-3">
+                <Text className="font-sans text-[12px] text-muted-foreground">
+                  Quick start - one tap fills a split scaled to your level:
+                </Text>
+                <View className="mt-2 flex-row flex-wrap gap-2">
+                  {(
+                    [
+                      ["push", "Push"],
+                      ["pull", "Pull"],
+                      ["legs", "Legs"],
+                      ["upper", "Upper"],
+                      ["lower", "Lower"],
+                      ["full", "Full Body"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      className="rounded-full border border-primary/40 bg-accent px-3.5 py-2 active:opacity-70 dark:bg-accent/15"
+                      disabled={presetLoading !== null}
+                      key={key}
+                      onPress={() => applyPreset(key, label)}
+                    >
+                      <Text className="font-semibold text-[12px] text-primary">
+                        {presetLoading === key ? "Loading..." : label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
 
             <View className="mt-3 gap-3">
               {items.map((exercise) => (
