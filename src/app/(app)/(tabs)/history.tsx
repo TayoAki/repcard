@@ -41,7 +41,9 @@ export default function HistoryTab() {
   const feed: FeedRow[] = [
     ...sessions.map((item) => ({ kind: "workout" as const, completedAt: item.completedAt, item })),
     ...runItems.map((item) => ({ kind: "run" as const, completedAt: item.completedAt, item })),
-  ].sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+    // ISO-8601 strings sort lexicographically; avoid String.localeCompare,
+    // which Hermes leaves undefined without Intl (crashes on-device).
+  ].sort((a, b) => (a.completedAt < b.completedAt ? 1 : a.completedAt > b.completedAt ? -1 : 0));
 
   const visible = filterDay
     ? feed.filter((row) => isSameDay(new Date(row.completedAt), filterDay))
