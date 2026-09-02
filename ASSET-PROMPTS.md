@@ -70,6 +70,24 @@ inner glows, premium fintech aesthetic, no photorealism, no watermark, no extran
 
 ---
 
+## 8a. Store screenshot backdrop A (`shot-frame-a.png`, 1024×1820)
+
+> Portrait store-screenshot backdrop: deep near-black green ground with a large soft
+> emerald radial glow centered in the upper half where a phone mockup will sit, faint
+> 4%-opacity grid, subtle edge vignette. Pure backdrop — no devices, no text.
+
+## 8b. Store screenshot backdrop B (`shot-frame-b.png`, 1024×1820)
+
+> Same system as backdrop A, but the emerald glow sweeps diagonally from lower-left,
+> with three oversized translucent trading-card outlines drifting in the background at
+> 6% opacity. Pure backdrop — no devices, no text.
+
+## 9. Empty-state spot art (`empty-state-art.png`, 1024×1024, transparent)
+
+> A stack of three minimalist emerald trading cards fanned like a hand of cards, top
+> card showing a faint glowing 87 and stat bars, flat vector glow style, fully
+> transparent background, centered with 12% padding.
+
 ## Post-processing (deterministic, `sips` on macOS)
 
 ```bash
