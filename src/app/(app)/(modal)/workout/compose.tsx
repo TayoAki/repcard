@@ -169,6 +169,11 @@ export default function ComposeWorkout() {
 
   const [presetLoading, setPresetLoading] = useState<string | null>(null);
   const presetRequestRef = useRef(0);
+  // Set inside the setItems updater (idempotent ref write) when a preset
+  // actually lands in an empty draft; consumed by the effect below. Nothing
+  // reads updater results synchronously - React may defer or replay them.
+  const presetAppliedRef = useRef<{ id: number; name: string } | null>(null);
+
   const applyPreset = async (key: string, label: string) => {
     const requestId = ++presetRequestRef.current;
     setPresetLoading(key);
@@ -181,27 +186,33 @@ export default function ComposeWorkout() {
         Alert.alert("Nothing to add", "The catalog has no matches for this split.");
         return;
       }
-      let applied = false;
       setItems((prev) => {
         if (prev.length > 0) return prev;
-        applied = true;
+        presetAppliedRef.current = { id: requestId, name: preset.name };
         return preset.exercises;
       });
-      if (!applied) return;
-      touchedRef.current.items = true;
-      // Name via updater: never overwrite something typed mid-flight.
-      setName((current) => {
-        if (current.trim()) return current;
-        touchedRef.current.name = true;
-        return preset.name;
-      });
-      haptic.success();
     } catch (error) {
       Alert.alert(`Could not load ${label}`, error instanceof Error ? error.message : "Try again");
     } finally {
       if (requestId === presetRequestRef.current) setPresetLoading(null);
     }
   };
+
+  // Completes a preset application AFTER the draft state actually commits:
+  // fills the name (only if still blank) and fires the success haptic.
+  useEffect(() => {
+    const appliedPreset = presetAppliedRef.current;
+    if (!appliedPreset || appliedPreset.id !== presetRequestRef.current) return;
+    if (items.length === 0) return;
+    presetAppliedRef.current = null;
+    touchedRef.current.items = true;
+    setName((current) => {
+      if (current.trim()) return current;
+      touchedRef.current.name = true;
+      return appliedPreset.name;
+    });
+    haptic.success();
+  }, [items]);
 
   return (
     <Screen>
