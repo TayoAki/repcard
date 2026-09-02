@@ -4,7 +4,7 @@ import * as Sharing from "expo-sharing";
 import { useColorScheme } from "nativewind";
 import { useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, Switch, Text, View } from "react-native";
-import ViewShot, { captureRef } from "react-native-view-shot";
+import { captureRef } from "react-native-view-shot";
 
 import Button from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
@@ -20,7 +20,7 @@ import { useToken } from "@/theme/use-token";
 /** Your card, the share action, and account settings. */
 export default function CardTab() {
   const queryClient = useQueryClient();
-  const shotRef = useRef<React.ComponentRef<typeof ViewShot>>(null);
+  const shotRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
   const { colorScheme, setColorScheme } = useColorScheme();
   const primary = useToken("primary");
@@ -92,9 +92,9 @@ export default function CardTab() {
         ) : (
           <>
             <View className="mt-4">
-              <ViewShot ref={shotRef}>
+              <View collapsable={false} ref={shotRef}>
                 <PlayerCard card={card} />
-              </ViewShot>
+              </View>
             </View>
 
             <Button

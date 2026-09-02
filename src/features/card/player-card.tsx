@@ -21,7 +21,7 @@ const PlayerCard = forwardRef<View, { card: CardData }>(function PlayerCard({ ca
     { label: "SESSIONS 28D", value: String(card.stats.sessions28) },
     { label: "VOLUME 28D", value: `${(card.stats.volume28Kg / 1000).toFixed(1)}t` },
     { label: "STREAK", value: `${card.streak}d` },
-    { label: "BEST RUN", value: `${card.bestStreak}d` },
+    { label: "BEST STREAK", value: `${card.bestStreak}d` },
     { label: "PRS 30D", value: String(card.stats.prCount30) },
     // Runners see distance; pure lifters keep muscle coverage.
     card.stats.runs28 > 0
