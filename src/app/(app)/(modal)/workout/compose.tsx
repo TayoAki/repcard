@@ -11,6 +11,7 @@ import Screen from "@/components/ui/screen";
 import { useWorkoutDraft, type DraftExercise } from "@/contexts/workout-draft";
 import {
   createWorkout,
+  fetchPreset,
   fetchWorkout,
   updateWorkout,
   type WorkoutPayload,
@@ -166,6 +167,66 @@ export default function ComposeWorkout() {
     setItems((prev) => prev.filter((e) => e.id !== id));
   };
 
+  const [presetLoading, setPresetLoading] = useState<string | null>(null);
+  const presetRequestRef = useRef(0);
+  // Set inside the setItems updater (idempotent ref write) when a preset
+  // actually lands in an empty draft; consumed by the effect below. Nothing
+  // reads updater results synchronously - React may defer or replay them.
+  const presetAppliedRef = useRef<{ id: number; name: string } | null>(null);
+
+  const applyPreset = async (key: string, label: string) => {
+    const requestId = ++presetRequestRef.current;
+    setPresetLoading(key);
+    try {
+      const preset = await fetchPreset(key);
+      // Only the latest request may apply, and only into a still-empty draft -
+      // anything the user did while we were fetching wins.
+      if (requestId !== presetRequestRef.current) return;
+      if (preset.exercises.length === 0) {
+        Alert.alert("Nothing to add", "The catalog has no matches for this split.");
+        return;
+      }
+      setItems((prev) => {
+        // Token re-checked at commit time: Cancel/unmount bump the token, so
+        // a preset resolving after the draft was cleared can never repopulate it.
+        if (requestId !== presetRequestRef.current || prev.length > 0) return prev;
+        presetAppliedRef.current = { id: requestId, name: preset.name };
+        return preset.exercises;
+      });
+    } catch (error) {
+      if (requestId === presetRequestRef.current) {
+        Alert.alert(`Could not load ${label}`, error instanceof Error ? error.message : "Try again");
+      }
+    } finally {
+      if (requestId === presetRequestRef.current) setPresetLoading(null);
+    }
+  };
+
+  // The draft provider outlives this screen: on unmount, invalidate any
+  // in-flight preset so a late response can't write into the shared draft.
+  useEffect(() => {
+    return () => {
+      presetRequestRef.current += 1;
+      presetAppliedRef.current = null;
+    };
+  }, []);
+
+  // Completes a preset application AFTER the draft state actually commits:
+  // fills the name (only if still blank) and fires the success haptic.
+  useEffect(() => {
+    const appliedPreset = presetAppliedRef.current;
+    if (!appliedPreset || appliedPreset.id !== presetRequestRef.current) return;
+    if (items.length === 0) return;
+    presetAppliedRef.current = null;
+    touchedRef.current.items = true;
+    setName((current) => {
+      if (current.trim()) return current;
+      touchedRef.current.name = true;
+      return appliedPreset.name;
+    });
+    haptic.success();
+  }, [items]);
+
   return (
     <Screen>
       <KeyboardAwareScrollView
@@ -177,7 +238,15 @@ export default function ComposeWorkout() {
       >
         <View className="flex-grow px-5 pb-8 pt-3">
           <View className="flex-row items-center justify-between">
-            <Pressable className="min-h-11 justify-center pr-3" onPress={() => { setItems([]); router.back(); }}>
+            <Pressable
+              className="min-h-11 justify-center pr-3"
+              onPress={() => {
+                presetRequestRef.current += 1; // invalidate any in-flight preset
+                presetAppliedRef.current = null;
+                setItems([]);
+                router.back();
+              }}
+            >
               <Text className="font-medium text-[13px] text-destructive">Cancel</Text>
             </Pressable>
             <Text className="font-bold text-[16px] text-foreground">
@@ -247,6 +316,38 @@ export default function ComposeWorkout() {
               <Text className="font-bold text-[16px] text-foreground">Exercises</Text>
               <Text className="font-sans text-[12px] text-muted-foreground">{items.length} added</Text>
             </View>
+
+            {items.length === 0 && !editId ? (
+              <View className="mt-3">
+                <Text className="font-sans text-[12px] text-muted-foreground">
+                  Quick start - one tap fills a split scaled to your level:
+                </Text>
+                <View className="mt-2 flex-row flex-wrap gap-2">
+                  {(
+                    [
+                      ["push", "Push"],
+                      ["pull", "Pull"],
+                      ["legs", "Legs"],
+                      ["upper", "Upper"],
+                      ["lower", "Lower"],
+                      ["full", "Full Body"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      className="rounded-full border border-primary/40 bg-accent px-3.5 py-2 active:opacity-70 dark:bg-accent/15"
+                      disabled={presetLoading !== null}
+                      key={key}
+                      onPress={() => applyPreset(key, label)}
+                    >
+                      <Text className="font-semibold text-[12px] text-primary">
+                        {presetLoading === key ? "Loading..." : label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
 
             <View className="mt-3 gap-3">
               {items.map((exercise) => (

@@ -34,27 +34,45 @@ const DOSAGE: Record<Experience, { perMuscle: number; sets: number; reps: number
   advanced: { perMuscle: 2, sets: 5, reps: 6, restSeconds: 150 },
 };
 
-export function buildFallbackPlan(goal: Goal, experience: Experience, catalog: CatalogExercise[]) {
+/** Builds one workout's exercise list from muscle keys, dosed by experience. */
+export function buildWorkoutFromKeys(
+  muscleKeys: readonly string[],
+  experience: Experience,
+  catalog: CatalogExercise[],
+) {
   const dose = DOSAGE[experience];
-
-  return SPLITS[goal].map((blueprint) => {
-    const picked: CatalogExercise[] = [];
-    for (const key of blueprint.muscleKeys) {
-      const matches = catalog
-        .filter((e) => e.muscles.toLowerCase().includes(key) && !picked.some((p) => p.id === e.id))
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .slice(0, dose.perMuscle);
-      picked.push(...matches);
-    }
-    return {
-      name: blueprint.name,
-      description: blueprint.description,
-      exercises: picked.map((e) => ({
-        id: e.id,
-        sets: dose.sets,
-        reps: dose.reps,
-        restSeconds: dose.restSeconds,
-      })),
-    };
-  });
+  const picked: CatalogExercise[] = [];
+  for (const key of muscleKeys) {
+    const matches = catalog
+      .filter((e) => e.muscles.toLowerCase().includes(key) && !picked.some((p) => p.id === e.id))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, dose.perMuscle);
+    picked.push(...matches);
+  }
+  return picked.map((e) => ({
+    id: e.id,
+    sets: dose.sets,
+    reps: dose.reps,
+    restSeconds: dose.restSeconds,
+  }));
 }
+
+export function buildFallbackPlan(goal: Goal, experience: Experience, catalog: CatalogExercise[]) {
+  return SPLITS[goal].map((blueprint) => ({
+    name: blueprint.name,
+    description: blueprint.description,
+    exercises: buildWorkoutFromKeys(blueprint.muscleKeys, experience, catalog),
+  }));
+}
+
+/** Composer Quick Start chips: one-tap starting points, goal-independent. */
+export const QUICK_STARTS = {
+  push: { name: "Push Day", muscleKeys: ["chest", "shoulders", "triceps"] },
+  pull: { name: "Pull Day", muscleKeys: ["lats", "middle back", "biceps"] },
+  legs: { name: "Leg Day", muscleKeys: ["quadriceps", "hamstrings", "calves"] },
+  upper: { name: "Upper Body", muscleKeys: ["chest", "lats", "shoulders", "biceps"] },
+  lower: { name: "Lower Body", muscleKeys: ["quadriceps", "hamstrings", "abdominals"] },
+  full: { name: "Full Body", muscleKeys: ["chest", "lats", "quadriceps"] },
+} as const;
+
+export type QuickStartKey = keyof typeof QUICK_STARTS;
