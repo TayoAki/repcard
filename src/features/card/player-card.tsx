@@ -58,8 +58,13 @@ const PlayerCard = forwardRef<View, { card: CardData }>(function PlayerCard({ ca
             </View>
           </View>
 
+          {/* Center emblem fills the card face so it never reads as empty */}
+          <View className="flex-1 items-center justify-center">
+            <Feather color="rgba(110,231,183,0.08)" name="zap" size={132} />
+          </View>
+
           {/* Identity */}
-          <View className="mt-auto">
+          <View>
             <Text className="font-bold text-[24px] leading-7 text-white" numberOfLines={2}>
               {card.name}
             </Text>
