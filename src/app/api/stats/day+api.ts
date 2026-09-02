@@ -2,7 +2,7 @@ import { differenceInCalendarDays } from "date-fns";
 import { and, eq, gte, lt } from "drizzle-orm";
 import { z } from "zod";
 
-import { db, workoutSessions } from "@/db";
+import { db, runs, workoutSessions } from "@/db";
 import { auth } from "@/lib/auth";
 
 const daySchema = z
@@ -24,21 +24,35 @@ export async function GET(request: Request) {
   });
   if (!parsed.success) return Response.json({ message: "Invalid day range" }, { status: 400 });
 
-  const rows = await db
-    .select({ durationSeconds: workoutSessions.durationSeconds })
-    .from(workoutSessions)
-    .where(
-      and(
-        eq(workoutSessions.userId, session.user.id),
-        gte(workoutSessions.completedAt, new Date(parsed.data.start)),
-        lt(workoutSessions.completedAt, new Date(parsed.data.end)),
+  const [rows, runRows] = await Promise.all([
+    db
+      .select({ durationSeconds: workoutSessions.durationSeconds })
+      .from(workoutSessions)
+      .where(
+        and(
+          eq(workoutSessions.userId, session.user.id),
+          gte(workoutSessions.completedAt, new Date(parsed.data.start)),
+          lt(workoutSessions.completedAt, new Date(parsed.data.end)),
+        ),
       ),
-    );
+    db
+      .select({ durationSeconds: runs.durationSeconds })
+      .from(runs)
+      .where(
+        and(
+          eq(runs.userId, session.user.id),
+          gte(runs.completedAt, new Date(parsed.data.start)),
+          lt(runs.completedAt, new Date(parsed.data.end)),
+        ),
+      ),
+  ]);
 
-  const totalSeconds = rows.reduce((sum, r) => sum + r.durationSeconds, 0);
+  // A run is a training session for daily-stats purposes.
+  const all = [...rows, ...runRows];
+  const totalSeconds = all.reduce((sum, r) => sum + r.durationSeconds, 0);
   return Response.json({
-    sessions: rows.length,
+    sessions: all.length,
     totalSeconds,
-    averageSeconds: rows.length ? Math.round(totalSeconds / rows.length) : 0,
+    averageSeconds: all.length ? Math.round(totalSeconds / all.length) : 0,
   });
 }

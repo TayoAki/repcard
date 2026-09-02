@@ -2,7 +2,7 @@
 import { subDays } from "date-fns";
 import { and, eq, gte, lt, max, sql } from "drizzle-orm";
 
-import { db, exercises, profiles, user, workoutSessions, workoutSessionSets } from "@/db";
+import { db, exercises, profiles, runs, user, workoutSessions, workoutSessionSets } from "@/db";
 import { computeRating, POSITION } from "@/lib/rating";
 import { summarizeStreak } from "@/lib/streak";
 
@@ -12,7 +12,7 @@ export async function buildCardPayload(userId: string) {
   const d28 = subDays(now, 28);
   const d30 = subDays(now, 30);
 
-  const [profileRows, userRows, sessionRows, volumeRows, muscleRows, prRows] = await Promise.all([
+  const [profileRows, userRows, sessionRows, volumeRows, muscleRows, prRows, runRows] = await Promise.all([
     db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1),
     db.select({ name: user.name }).from(user).where(eq(user.id, userId)).limit(1),
     db
@@ -45,13 +45,25 @@ export async function buildCardPayload(userId: string) {
       .innerJoin(workoutSessions, eq(workoutSessions.id, workoutSessionSets.sessionId))
       .where(eq(workoutSessions.userId, userId))
       .groupBy(workoutSessionSets.exerciseId),
+    db
+      .select({ completedAt: runs.completedAt, distanceMeters: runs.distanceMeters })
+      .from(runs)
+      .where(eq(runs.userId, userId)),
   ]);
 
   const profile = profileRows[0];
   if (!profile) return null;
 
-  const streak = summarizeStreak(sessionRows.map((s) => s.completedAt));
-  const sessionsLast28 = sessionRows.filter((s) => s.completedAt >= d28).length;
+  // Runs count as training days for streaks and session counts.
+  const trainingDates = [
+    ...sessionRows.map((s) => s.completedAt),
+    ...runRows.map((r) => r.completedAt),
+  ];
+  const streak = summarizeStreak(trainingDates);
+  const sessionsLast28 = trainingDates.filter((d) => d >= d28).length;
+  const distance28Meters = runRows
+    .filter((r) => r.completedAt >= d28)
+    .reduce((sum, r) => sum + r.distanceMeters, 0);
   const prCount30 = prRows.filter(
     (r) => r.recentMax !== null && (r.priorMax === null || Number(r.recentMax) > Number(r.priorMax)),
   ).length;
@@ -85,6 +97,8 @@ export async function buildCardPayload(userId: string) {
       volume28Kg: Math.round((volumeRows[0]?.recent ?? 0) + (volumeRows[0]?.prior ?? 0)),
       prCount30,
       muscleGroups28: muscleRows[0]?.count ?? 0,
+      distance28Meters,
+      runs28: runRows.filter((r) => r.completedAt >= d28).length,
     },
   };
 }

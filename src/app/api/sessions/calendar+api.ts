@@ -2,7 +2,7 @@ import { differenceInCalendarDays } from "date-fns";
 import { and, eq, gte, lt } from "drizzle-orm";
 import { z } from "zod";
 
-import { db, workoutSessions } from "@/db";
+import { db, runs, workoutSessions } from "@/db";
 import { auth } from "@/lib/auth";
 
 const rangeSchema = z
@@ -24,8 +24,9 @@ export async function GET(request: Request) {
   });
   if (!parsed.success) return Response.json({ message: "Invalid range" }, { status: 400 });
 
-  const rows = await db
-    .select({ completedAt: workoutSessions.completedAt })
+  const [rows, runRows] = await Promise.all([
+    db
+      .select({ completedAt: workoutSessions.completedAt })
     .from(workoutSessions)
     .where(
       and(
@@ -33,7 +34,20 @@ export async function GET(request: Request) {
         gte(workoutSessions.completedAt, new Date(parsed.data.start)),
         lt(workoutSessions.completedAt, new Date(parsed.data.end)),
       ),
-    );
+    ),
+    db
+      .select({ completedAt: runs.completedAt })
+      .from(runs)
+      .where(
+        and(
+          eq(runs.userId, session.user.id),
+          gte(runs.completedAt, new Date(parsed.data.start)),
+          lt(runs.completedAt, new Date(parsed.data.end)),
+        ),
+      ),
+  ]);
 
-  return Response.json({ dates: rows.map((r) => r.completedAt.toISOString()) });
+  return Response.json({
+    dates: [...rows, ...runRows].map((r) => r.completedAt.toISOString()),
+  });
 }

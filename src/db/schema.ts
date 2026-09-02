@@ -122,6 +122,19 @@ export const workoutSessionSets = pgTable("workout_session_sets", {
   weight: real(), // kg canonical
 });
 
+/** Logged runs - manual entry v1 (GPS is a later phase). Meters canonical. */
+export const runs = pgTable("runs", {
+  id: uuid().defaultRandom().primaryKey(),
+  userId: text()
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  distanceMeters: integer().notNull(),
+  durationSeconds: integer().notNull(),
+  note: text(),
+  completedAt: timestamp({ withTimezone: true }).notNull(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Head-to-head streak battles, joined by short invite code. */
 export const battles = pgTable("battles", {
   id: uuid().defaultRandom().primaryKey(),
@@ -143,3 +156,4 @@ export type WorkoutExercise = typeof workoutExercises.$inferSelect;
 export type WorkoutSession = typeof workoutSessions.$inferSelect;
 export type WorkoutSessionSet = typeof workoutSessionSets.$inferSelect;
 export type Battle = typeof battles.$inferSelect;
+export type Run = typeof runs.$inferSelect;

@@ -22,6 +22,13 @@
       "when": 1787509539188,
       "tag": "0002_nifty_sunspot",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788382398394,
+      "tag": "0003_shiny_invisible_woman",
+      "breakpoints": true
     }
   ]
 }
