@@ -13,7 +13,8 @@ export async function GET(request: Request, { key }: Record<string, string>) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return Response.json({ message: "Unauthorized" }, { status: 401 });
 
-  if (!(key in QUICK_STARTS)) {
+  // Object.hasOwn: `in` would accept prototype keys like "constructor"
+  if (!Object.hasOwn(QUICK_STARTS, key)) {
     return Response.json({ message: "Unknown preset" }, { status: 404 });
   }
   const preset = QUICK_STARTS[key as QuickStartKey];

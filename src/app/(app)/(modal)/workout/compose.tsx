@@ -168,25 +168,38 @@ export default function ComposeWorkout() {
   };
 
   const [presetLoading, setPresetLoading] = useState<string | null>(null);
+  const presetRequestRef = useRef(0);
   const applyPreset = async (key: string, label: string) => {
+    const requestId = ++presetRequestRef.current;
     setPresetLoading(key);
     try {
       const preset = await fetchPreset(key);
+      // Only the latest request may apply, and only into a still-empty draft -
+      // anything the user did while we were fetching wins.
+      if (requestId !== presetRequestRef.current) return;
       if (preset.exercises.length === 0) {
         Alert.alert("Nothing to add", "The catalog has no matches for this split.");
         return;
       }
+      let applied = false;
+      setItems((prev) => {
+        if (prev.length > 0) return prev;
+        applied = true;
+        return preset.exercises;
+      });
+      if (!applied) return;
       touchedRef.current.items = true;
-      setItems(preset.exercises);
-      if (!name.trim()) {
+      // Name via updater: never overwrite something typed mid-flight.
+      setName((current) => {
+        if (current.trim()) return current;
         touchedRef.current.name = true;
-        setName(preset.name);
-      }
+        return preset.name;
+      });
       haptic.success();
     } catch (error) {
       Alert.alert(`Could not load ${label}`, error instanceof Error ? error.message : "Try again");
     } finally {
-      setPresetLoading(null);
+      if (requestId === presetRequestRef.current) setPresetLoading(null);
     }
   };
 

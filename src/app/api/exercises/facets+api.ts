@@ -10,7 +10,9 @@ export async function GET(request: Request) {
 
   const [muscles, equipment, difficulties] = await Promise.all([
     db
-      .select({ value: sql<string>`distinct split_part(${exercises.muscles}, ' • ', 1)` })
+      .select({
+        value: sql<string>`distinct unnest(string_to_array(${exercises.muscles}, ' • '))`,
+      })
       .from(exercises),
     db
       .select({ value: sql<string>`distinct ${exercises.equipment}` })
