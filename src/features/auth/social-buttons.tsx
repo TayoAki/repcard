@@ -1,9 +1,10 @@
 import { FontAwesome } from "@expo/vector-icons";
 import { useState } from "react";
-import { Alert, Text, View } from "react-native";
+import { Alert, Platform, Text, View } from "react-native";
 
 import Button from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
+import AppleButton from "@/features/auth/apple-button";
 import { useToken } from "@/theme/use-token";
 
 /**
@@ -12,7 +13,7 @@ import { useToken } from "@/theme/use-token";
  * Renders nothing (not even the divider) when no provider is enabled.
  */
 const GOOGLE_ENABLED = process.env.EXPO_PUBLIC_AUTH_GOOGLE === "1";
-const APPLE_ENABLED = process.env.EXPO_PUBLIC_AUTH_APPLE === "1";
+const APPLE_ENABLED = process.env.EXPO_PUBLIC_AUTH_APPLE === "1" && Platform.OS === "ios";
 
 export default function SocialButtons() {
   const fg = useToken("fg");
@@ -49,17 +50,7 @@ export default function SocialButtons() {
             Continue with Google
           </Button>
         ) : null}
-        {APPLE_ENABLED ? (
-          <Button
-            before={<FontAwesome color={fg} name="apple" size={20} />}
-            busy={busyWith === "apple"}
-            disabled={busyWith !== null}
-            onPress={() => signIn("apple")}
-            variant="outline"
-          >
-            Continue with Apple
-          </Button>
-        ) : null}
+        <AppleButton />
       </View>
     </View>
   );

@@ -11,6 +11,7 @@ import { onboardingSchema } from "@/lib/validation/onboarding";
 import { sendEmail } from "@/server/email";
 
 const baseURL = process.env.BETTER_AUTH_URL!;
+const APPLE_BUNDLE_ID = "com.tayoaki.repcard";
 
 /** Signup carries onboarding answers as extra body fields; reject early if bad. */
 const readOnboarding = (body: unknown) => {
@@ -62,10 +63,14 @@ export const auth = betterAuth({
         clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
       },
     }),
-    ...(process.env.APPLE_CLIENT_ID && {
+    // Native Sign in with Apple: the identity token's audience is the app
+    // bundle id, verified against Apple's public keys - no client secret or
+    // Services ID needed for the native flow. Inert until the client shows
+    // the button (EXPO_PUBLIC_AUTH_APPLE=1) and the App ID has the capability.
+    ...(process.env.APPLE_ENABLED === "1" && {
       apple: {
-        clientId: process.env.APPLE_CLIENT_ID,
-        clientSecret: process.env.APPLE_CLIENT_SECRET ?? "",
+        clientId: APPLE_BUNDLE_ID,
+        appBundleIdentifier: APPLE_BUNDLE_ID,
       },
     }),
   },

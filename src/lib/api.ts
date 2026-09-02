@@ -13,9 +13,11 @@ async function request<T>(path: string, init?: { method?: string; body?: unknown
     }),
   });
   if (error) {
-    throw new Error(
+    const err = new Error(
       (error as { message?: string }).message ?? `Request failed: ${init?.method ?? "GET"} ${path}`,
-    );
+    ) as Error & { status?: number };
+    err.status = (error as { status?: number }).status;
+    throw err;
   }
   return data as T;
 }
@@ -214,6 +216,27 @@ export const fetchDayStats = (start: Date, end: Date) =>
 export const fetchProfile = () => request<ProfileData>("/api/profile");
 export const updateProfile = (patch: { weightUnit?: "kg" | "lb"; pushToken?: string | null }) =>
   request<{ message: string }>("/api/profile", { method: "PATCH", body: patch });
+
+export const setupProfile = (answers: {
+  gender: "male" | "female";
+  goal: "build-muscle" | "lose-fat" | "maintain";
+  experience: "beginner" | "intermediate" | "advanced";
+}) => request<{ id: string }>("/api/profile", { method: "POST", body: answers });
+
+/**
+ * Whether the signed-in user has a profile. Only a 404 means "no profile"
+ * (the social-signup case) - 401 / 5xx / network errors are rethrown so the
+ * app never routes a real user into profile setup over a transient blip.
+ */
+export const hasProfile = async (): Promise<boolean> => {
+  try {
+    await fetchProfile();
+    return true;
+  } catch (error) {
+    if ((error as { status?: number }).status === 404) return false;
+    throw error;
+  }
+};
 
 // ----- Player card ----------------------------------------------------------
 
