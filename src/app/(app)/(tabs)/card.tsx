@@ -20,7 +20,7 @@ import { useToken } from "@/theme/use-token";
 /** Your card, the share action, and account settings. */
 export default function CardTab() {
   const queryClient = useQueryClient();
-  const shotRef = useRef<ViewShot>(null);
+  const shotRef = useRef<React.ComponentRef<typeof ViewShot>>(null);
   const [sharing, setSharing] = useState(false);
   const { colorScheme, setColorScheme } = useColorScheme();
   const primary = useToken("primary");
