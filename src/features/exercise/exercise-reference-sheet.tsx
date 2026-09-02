@@ -24,7 +24,7 @@ export default function ExerciseReferenceSheet({ exerciseId, exerciseName, visib
     queryFn: () => fetchExercise(exerciseId),
     staleTime: Infinity,
   });
-  const { data: coach } = useQuery({
+  const { data: coach, isPending: coachPending } = useQuery({
     enabled: visible && Boolean(exerciseId),
     queryKey: ["coach", exerciseId],
     queryFn: () => fetchCoachCues(exerciseId),
@@ -84,8 +84,12 @@ export default function ExerciseReferenceSheet({ exerciseId, exerciseName, visib
                   <Text className="flex-1 font-sans text-[13.5px] leading-5 text-foreground">{step}</Text>
                 </View>
               ))
-            ) : (
+            ) : isPending || coachPending ? (
               <Skeleton className="h-16 w-full" />
+            ) : (
+              <Text className="font-sans text-[13px] text-muted-foreground">
+                No written steps for this exercise - the image above shows the movement.
+              </Text>
             )}
           </View>
 
