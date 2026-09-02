@@ -83,6 +83,15 @@ export async function POST(request: Request) {
       .returning();
     return Response.json(created, { status: 201 });
   } catch (error) {
+    // profiles.userId is unique: a concurrent setup that lost the race hits
+    // the constraint. Re-check and return the same 409 the winner got, so two
+    // taps never surface a 500.
+    const [now] = await db
+      .select({ id: profiles.id })
+      .from(profiles)
+      .where(eq(profiles.userId, session.user.id))
+      .limit(1);
+    if (now) return Response.json({ message: "Profile already exists" }, { status: 409 });
     return serverError("profile.POST", error);
   }
 }

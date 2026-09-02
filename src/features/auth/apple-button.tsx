@@ -35,9 +35,24 @@ export default function AppleButton() {
         Alert.alert("Sign in failed", "Apple did not return an identity token.");
         return;
       }
+      // Apple returns fullName ONLY on the first authorization; forward it so
+      // Better Auth stores a real name instead of "" for brand-new users.
+      const fullName = credential.fullName;
       const { error } = await authClient.signIn.social({
         provider: "apple",
-        idToken: { token: credential.identityToken },
+        idToken: {
+          token: credential.identityToken,
+          ...(fullName?.givenName || fullName?.familyName
+            ? {
+                user: {
+                  name: {
+                    firstName: fullName.givenName ?? "",
+                    lastName: fullName.familyName ?? "",
+                  },
+                },
+              }
+            : {}),
+        },
       });
       if (error) Alert.alert("Could not sign in", error.message);
     } catch (e) {
