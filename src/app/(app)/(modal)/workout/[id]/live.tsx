@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import { Alert, Image, Pressable, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView, KeyboardToolbar } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,6 +10,7 @@ import Button from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
 import Screen from "@/components/ui/screen";
 import Skeleton from "@/components/ui/skeleton";
+import ExerciseReferenceSheet from "@/features/exercise/exercise-reference-sheet";
 import { useSessionTimer } from "@/hooks/use-session-timer";
 import { fetchWorkout, saveSession, type WorkoutExerciseItem } from "@/lib/api";
 import { cx } from "@/lib/cx";
@@ -36,6 +37,7 @@ export default function LiveSession() {
   const [done, setDone] = useState<Set<string>>(() => new Set());
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [reference, setReference] = useState<{ id: string; name: string } | null>(null);
 
   const inputsRef = useRef<Record<string, { reps?: string; weight?: string }>>({});
   const exitApprovedRef = useRef(false);
@@ -245,20 +247,46 @@ export default function LiveSession() {
             const isOpen = expanded === exercise.id;
             return (
               <View className="overflow-hidden rounded-2xl border border-border bg-card" key={exercise.id}>
-                <Pressable
-                  className="flex-row items-center px-4 py-4"
-                  onPress={() => setExpanded(isOpen ? null : exercise.id)}
-                >
-                  <View className="flex-1">
+                <View className="flex-row items-center px-4 py-3">
+                  {exercise.image ? (
+                    <Image
+                      className="h-11 w-11 rounded-xl bg-muted"
+                      resizeMode="cover"
+                      source={{ uri: exercise.image }}
+                    />
+                  ) : (
+                    <View className="h-11 w-11 items-center justify-center rounded-xl bg-muted">
+                      <Feather color={mutedFg} name="image" size={16} />
+                    </View>
+                  )}
+                  <Pressable
+                    className="ml-3 flex-1"
+                    onPress={() => setExpanded(isOpen ? null : exercise.id)}
+                  >
                     <Text className="font-bold text-[14px] text-foreground">{exercise.name}</Text>
                     <Text className="mt-0.5 font-sans text-[12px] text-muted-foreground">
                       {exercise.sets}×{exercise.reps}
                       {exercise.targetWeight ? ` @ ${exercise.targetWeight}kg` : ""} · rest{" "}
                       {exercise.restSeconds}s
                     </Text>
-                  </View>
-                  <Feather color={mutedFg} name={isOpen ? "chevron-up" : "chevron-down"} size={19} />
-                </Pressable>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel={`How to do ${exercise.name}`}
+                    accessibilityRole="button"
+                    className="h-10 w-10 items-center justify-center"
+                    hitSlop={4}
+                    onPress={() => setReference({ id: exercise.id, name: exercise.name })}
+                  >
+                    <Feather color={primary} name="help-circle" size={19} />
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel={isOpen ? "Collapse" : "Expand"}
+                    className="h-10 w-10 items-center justify-center"
+                    onPress={() => setExpanded(isOpen ? null : exercise.id)}
+                  >
+                    <Feather color={mutedFg} name={isOpen ? "chevron-up" : "chevron-down"} size={19} />
+                  </Pressable>
+                </View>
 
                 {isOpen ? (
                   <View className="border-t border-border">
@@ -354,6 +382,14 @@ export default function LiveSession() {
             <Text className="mt-0.5 font-semibold text-[10px] text-primary">Skip</Text>
           </Pressable>
         </View>
+      ) : null}
+      {reference ? (
+        <ExerciseReferenceSheet
+          exerciseId={reference.id}
+          exerciseName={reference.name}
+          onClose={() => setReference(null)}
+          visible
+        />
       ) : null}
       <KeyboardToolbar />
     </Screen>
