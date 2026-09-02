@@ -8,7 +8,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.tayoaki.repcard",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.tayoaki.repcard",
@@ -41,7 +42,8 @@
       ],
       "expo-web-browser",
       "expo-secure-store",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,

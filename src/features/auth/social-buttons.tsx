@@ -4,6 +4,7 @@ import { Alert, Text, View } from "react-native";
 
 import Button from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
+import AppleButton from "@/features/auth/apple-button";
 import { useToken } from "@/theme/use-token";
 
 /**
@@ -49,17 +50,7 @@ export default function SocialButtons() {
             Continue with Google
           </Button>
         ) : null}
-        {APPLE_ENABLED ? (
-          <Button
-            before={<FontAwesome color={fg} name="apple" size={20} />}
-            busy={busyWith === "apple"}
-            disabled={busyWith !== null}
-            onPress={() => signIn("apple")}
-            variant="outline"
-          >
-            Continue with Apple
-          </Button>
-        ) : null}
+        <AppleButton />
       </View>
     </View>
   );

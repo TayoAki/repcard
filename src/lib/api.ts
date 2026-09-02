@@ -215,6 +215,22 @@ export const fetchProfile = () => request<ProfileData>("/api/profile");
 export const updateProfile = (patch: { weightUnit?: "kg" | "lb"; pushToken?: string | null }) =>
   request<{ message: string }>("/api/profile", { method: "PATCH", body: patch });
 
+export const setupProfile = (answers: {
+  gender: "male" | "female";
+  goal: "build-muscle" | "lose-fat" | "maintain";
+  experience: "beginner" | "intermediate" | "advanced";
+}) => request<{ id: string }>("/api/profile", { method: "POST", body: answers });
+
+/** Returns true if the signed-in user has a profile (social users may not). */
+export const hasProfile = async (): Promise<boolean> => {
+  try {
+    await fetchProfile();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 // ----- Player card ----------------------------------------------------------
 
 export type CardData = {
