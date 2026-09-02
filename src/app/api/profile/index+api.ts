@@ -72,26 +72,31 @@ export async function POST(request: Request) {
     .limit(1);
   if (existing) return Response.json({ message: "Profile already exists" }, { status: 409 });
 
-  try {
-    const [created] = await db
-      .insert(profiles)
-      .values({
-        userId: session.user.id,
-        handle: await uniqueHandle(session.user.name),
-        ...parsed.data,
-      })
-      .returning();
-    return Response.json(created, { status: 201 });
-  } catch (error) {
-    // profiles.userId is unique: a concurrent setup that lost the race hits
-    // the constraint. Re-check and return the same 409 the winner got, so two
-    // taps never surface a 500.
-    const [now] = await db
-      .select({ id: profiles.id })
-      .from(profiles)
-      .where(eq(profiles.userId, session.user.id))
-      .limit(1);
-    if (now) return Response.json({ message: "Profile already exists" }, { status: 409 });
-    return serverError("profile.POST", error);
+  // Both profiles.userId and profiles.handle are unique. A concurrent setup
+  // can lose either race: a userId conflict means the user already has a
+  // profile (409), a handle conflict just needs a fresh handle (retry).
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const [created] = await db
+        .insert(profiles)
+        .values({
+          userId: session.user.id,
+          handle: await uniqueHandle(session.user.name),
+          ...parsed.data,
+        })
+        .returning();
+      return Response.json(created, { status: 201 });
+    } catch (error) {
+      const [now] = await db
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(eq(profiles.userId, session.user.id))
+        .limit(1);
+      if (now) return Response.json({ message: "Profile already exists" }, { status: 409 });
+      // No profile for this user, so it was a handle collision - loop and
+      // regenerate. Give up after a few tries.
+      if (attempt === 3) return serverError("profile.POST", error);
+    }
   }
+  return serverError("profile.POST", new Error("exhausted handle retries"));
 }
