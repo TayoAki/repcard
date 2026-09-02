@@ -78,9 +78,11 @@ inner glows, premium fintech aesthetic, no photorealism, no watermark, no extran
 
 ## 8b. Store screenshot backdrop B (`shot-frame-b.png`, 1024×1820)
 
-> Same system as backdrop A, but the emerald glow sweeps diagonally from lower-left,
-> with three oversized translucent trading-card outlines drifting in the background at
-> 6% opacity. Pure backdrop — no devices, no text.
+> Portrait store-screenshot backdrop, deep near-black green ground: a large soft
+> emerald glow sweeping diagonally from the lower-left corner, three oversized
+> translucent emerald trading-card outlines drifting in the background at 6% opacity,
+> a faint 4%-opacity grid, and a subtle edge vignette. Pure backdrop — no devices,
+> no text.
 
 ## 9. Empty-state spot art (`empty-state-art.png`, 1024×1024, transparent)
 
