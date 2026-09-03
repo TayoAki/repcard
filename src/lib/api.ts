@@ -293,6 +293,17 @@ export const mintShareSlug = (workoutId: string) =>
 export const importWorkout = (slug: string) =>
   request<{ id: string; name: string }>("/api/workouts/import", { method: "POST", body: { slug } });
 
+// ----- Referrals ------------------------------------------------------------
+
+export type ReferralInfo = { code: string; recruits: number; redeemed: boolean };
+
+export const fetchReferral = () => request<ReferralInfo>("/api/referral");
+export const redeemReferral = (code: string) =>
+  request<{ ok: boolean; referrer: { handle: string; name: string } }>("/api/referral/redeem", {
+    method: "POST",
+    body: { code },
+  });
+
 // ----- Battles --------------------------------------------------------------
 
 export type BattleListItem = {
