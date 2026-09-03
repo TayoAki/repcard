@@ -123,7 +123,24 @@ export default function CardTab() {
 
         <Pressable
           accessibilityRole="button"
-          className="mt-8 flex-row items-center rounded-2xl border border-border bg-card p-4 active:bg-muted"
+          className="mt-8 flex-row items-center rounded-2xl border border-primary bg-accent p-4 active:opacity-90 dark:bg-accent/20"
+          onPress={() => router.push("/paywall")}
+        >
+          <View className="h-9 w-9 items-center justify-center rounded-xl bg-primary">
+            <Feather color="#052E22" name="zap" size={18} />
+          </View>
+          <View className="ml-3 flex-1">
+            <Text className="font-semibold text-[14px] text-foreground">RepCard Pro</Text>
+            <Text className="mt-0.5 font-sans text-[12px] text-muted-foreground">
+              Pro card themes, unlimited AI plans & more
+            </Text>
+          </View>
+          <Feather color={primary} name="chevron-right" size={18} />
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          className="mt-3 flex-row items-center rounded-2xl border border-border bg-card p-4 active:bg-muted"
           onPress={() => router.push("/leaderboard")}
         >
           <View className="h-9 w-9 items-center justify-center rounded-xl bg-accent dark:bg-accent/20">
