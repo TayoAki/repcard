@@ -200,6 +200,7 @@ export type ProfileData = {
   goal: "build-muscle" | "lose-fat" | "maintain";
   experience: "beginner" | "intermediate" | "advanced";
   weightUnit: "kg" | "lb";
+  leaderboardOptOut: boolean;
   name: string;
   email: string;
 };
@@ -214,7 +215,11 @@ export const fetchStreakDates = () => request<{ dates: string[] }>("/api/session
 export const fetchDayStats = (start: Date, end: Date) =>
   request<DayStats>(`/api/stats/day?${range(start, end)}`);
 export const fetchProfile = () => request<ProfileData>("/api/profile");
-export const updateProfile = (patch: { weightUnit?: "kg" | "lb"; pushToken?: string | null }) =>
+export const updateProfile = (patch: {
+  weightUnit?: "kg" | "lb";
+  pushToken?: string | null;
+  leaderboardOptOut?: boolean;
+}) =>
   request<{ message: string }>("/api/profile", { method: "PATCH", body: patch });
 
 export const setupProfile = (answers: {
@@ -333,3 +338,24 @@ export const logRun = (payload: {
   durationSeconds: number;
   note?: string;
 }) => request<RunItem>("/api/runs", { method: "POST", body: payload });
+
+// ----- Leaderboard ----------------------------------------------------------
+
+export type LeaderboardMetric = "sessions" | "volume" | "distance";
+export type LeaderboardPeriod = "week" | "all";
+export type LeaderboardRow = {
+  rank: number;
+  handle: string;
+  name: string;
+  value: number;
+  isMe: boolean;
+};
+export type Leaderboard = {
+  metric: LeaderboardMetric;
+  period: LeaderboardPeriod;
+  rows: LeaderboardRow[];
+  me: LeaderboardRow | null;
+};
+
+export const fetchLeaderboard = (metric: LeaderboardMetric, period: LeaderboardPeriod) =>
+  request<Leaderboard>(`/api/leaderboard?metric=${metric}&period=${period}`);

@@ -10,6 +10,7 @@ import { serverError } from "@/server/log";
 const patchSchema = z.object({
   weightUnit: z.enum(["kg", "lb"]).optional(),
   pushToken: z.string().max(64).nullable().optional(),
+  leaderboardOptOut: z.boolean().optional(),
 });
 
 export async function GET(request: Request) {
