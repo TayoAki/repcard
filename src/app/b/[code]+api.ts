@@ -25,7 +25,10 @@ export async function GET(_request: Request, { code }: Record<string, string>) {
     .where(eq(user.id, battle.creatorId))
     .limit(1);
 
-  const who = creator ? escapeHtml(creator.name) : "An athlete";
+  // htmlPage escapes `title` itself, so pass it the RAW name; escape only for
+  // the body, which interpolates into raw HTML. (Double-escaping showed &amp;.)
+  const whoRaw = creator ? creator.name : "An athlete";
+  const who = escapeHtml(whoRaw);
   const taken = battle.status !== "pending";
 
   const body = taken
@@ -36,7 +39,7 @@ export async function GET(_request: Request, { code }: Record<string, string>) {
 
   return new Response(
     htmlPage({
-      title: taken ? "Battle claimed" : `${who} challenged you`,
+      title: taken ? "Battle claimed" : `${whoRaw} challenged you`,
       description: "A 7-day streak battle on RepCard.",
       deepLink: taken ? "repcard://" : `repcard://battle/join/${up}`,
       body,

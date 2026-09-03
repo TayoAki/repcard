@@ -94,45 +94,52 @@ export default function WorkoutsTab() {
         }
         ItemSeparatorComponent={() => <View className="h-3" />}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            className="flex-row items-center rounded-2xl border border-border bg-card p-3 active:bg-muted"
-            onPress={() => router.push({ pathname: "/workout/[id]", params: { id: item.id } })}
-          >
-            {item.image ? (
-              <Image className="h-[72px] w-[84px] rounded-xl bg-muted" resizeMode="cover" source={{ uri: item.image }} />
-            ) : (
-              <View className="h-[72px] w-[84px] items-center justify-center rounded-xl bg-muted">
-                <Feather color={mutedFg} name="image" size={20} />
-              </View>
-            )}
-            <View className="ml-3 flex-1">
-              <View className="flex-row items-center gap-2">
-                <Text className="font-semibold text-[15px] text-foreground" numberOfLines={1}>
-                  {item.name}
+          // Row nav and share are SIBLINGS inside a plain container, not nested
+          // touchables - a screen reader would hide a Pressable nested inside an
+          // accessible TouchableOpacity.
+          <View className="flex-row items-center rounded-2xl border border-border bg-card p-3">
+            <TouchableOpacity
+              accessibilityLabel={item.name}
+              accessibilityRole="button"
+              className="flex-1 flex-row items-center"
+              onPress={() => router.push({ pathname: "/workout/[id]", params: { id: item.id } })}
+            >
+              {item.image ? (
+                <Image className="h-[72px] w-[84px] rounded-xl bg-muted" resizeMode="cover" source={{ uri: item.image }} />
+              ) : (
+                <View className="h-[72px] w-[84px] items-center justify-center rounded-xl bg-muted">
+                  <Feather color={mutedFg} name="image" size={20} />
+                </View>
+              )}
+              <View className="ml-3 flex-1">
+                <View className="flex-row items-center gap-2">
+                  <Text className="font-semibold text-[15px] text-foreground" numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  {item.source === "ai_plan" ? (
+                    <View className="rounded-full bg-accent px-2 py-0.5 dark:bg-accent/20">
+                      <Text className="font-semibold text-[9px] text-primary">AI</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text className="mt-1 font-sans capitalize text-[11.5px] text-muted-foreground" numberOfLines={1}>
+                  {item.muscles || "No exercises yet"}
                 </Text>
-                {item.source === "ai_plan" ? (
-                  <View className="rounded-full bg-accent px-2 py-0.5 dark:bg-accent/20">
-                    <Text className="font-semibold text-[9px] text-primary">AI</Text>
-                  </View>
-                ) : null}
+                <Text className="mt-1.5 font-sans text-[11.5px] text-muted-foreground">
+                  {item.exerciseCount} exercises · {item.totalSets} sets
+                </Text>
               </View>
-              <Text className="mt-1 font-sans capitalize text-[11.5px] text-muted-foreground" numberOfLines={1}>
-                {item.muscles || "No exercises yet"}
-              </Text>
-              <Text className="mt-1.5 font-sans text-[11.5px] text-muted-foreground">
-                {item.exerciseCount} exercises · {item.totalSets} sets
-              </Text>
-            </View>
+            </TouchableOpacity>
             <Pressable
               accessibilityLabel={`Share ${item.name}`}
               accessibilityRole="button"
-              className="h-10 w-10 items-center justify-center"
+              className="ml-1 h-10 w-10 items-center justify-center"
               hitSlop={4}
               onPress={() => shareWorkout(item.id, item.name)}
             >
               <Feather color={mutedFg} name="share" size={17} />
             </Pressable>
-          </TouchableOpacity>
+          </View>
         )}
         refreshControl={
           <RefreshControl colors={[primary]} onRefresh={() => refetch()} refreshing={isRefetching} tintColor={primary} />
