@@ -36,6 +36,14 @@ ${inviter ? `<div class="grid"><div class="cell"><b>${escapeHtml(up)}</b><span>I
       deepLink: inviter ? `repcard://invite/${up}` : "repcard://",
       body,
     }),
-    { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=120" } },
+    {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        // Known invites are cacheable; an unknown code must NOT be cached - it
+        // could be minted to a real user later, and a stale generic page (deep
+        // link repcard://) would then lose that new invite's attribution.
+        "Cache-Control": inviter ? "public, max-age=120" : "no-store",
+      },
+    },
   );
 }

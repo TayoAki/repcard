@@ -28,12 +28,13 @@ export async function POST(request: Request) {
       return Response.json({ message: "You can't redeem your own code" }, { status: 400 });
     }
 
-    // One-time + race-safe: only lands while referredBy is still null. A second
-    // attempt (or a concurrent one) finds it already set and gets the 409.
+    // One-time + race-safe: gate on referralRedeemedAt (immutable), NOT
+    // referredBy - the latter can be nulled by ON DELETE SET NULL if the
+    // referrer deletes their account, which must not re-open redemption.
     const claimed = await db
       .update(profiles)
-      .set({ referredBy: referrer.userId })
-      .where(and(eq(profiles.userId, userId), isNull(profiles.referredBy)))
+      .set({ referredBy: referrer.userId, referralRedeemedAt: new Date() })
+      .where(and(eq(profiles.userId, userId), isNull(profiles.referralRedeemedAt)))
       .returning({ id: profiles.id });
     if (claimed.length === 0) {
       return Response.json({ message: "You've already used an invite code" }, { status: 409 });

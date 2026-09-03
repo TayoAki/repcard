@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
   try {
     const [me] = await db
-      .select({ referralCode: profiles.referralCode, referredBy: profiles.referredBy })
+      .select({ referralCode: profiles.referralCode, referralRedeemedAt: profiles.referralRedeemedAt })
       .from(profiles)
       .where(eq(profiles.userId, userId))
       .limit(1);
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       .from(profiles)
       .where(eq(profiles.referredBy, userId));
 
-    return Response.json({ code, recruits, redeemed: me.referredBy !== null });
+    return Response.json({ code, recruits, redeemed: me.referralRedeemedAt !== null });
   } catch (error) {
     return serverError("referral.GET", error);
   }
