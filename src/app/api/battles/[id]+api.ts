@@ -1,18 +1,22 @@
 import { and, eq, gte, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { battles, db, profiles, user, workoutSessions } from "@/db";
+import { battles, db, profiles, runs, user, workoutSessions } from "@/db";
 import { auth } from "@/lib/auth";
 import { summarizeStreak } from "@/lib/streak";
 
 const idSchema = z.uuid();
 
 async function fighterStats(userId: string, windowStart: Date | null, windowEnd: Date | null) {
-  const [rows, named] = await Promise.all([
+  const [rows, runRows, named] = await Promise.all([
     db
       .select({ completedAt: workoutSessions.completedAt })
       .from(workoutSessions)
       .where(eq(workoutSessions.userId, userId)),
+    db
+      .select({ completedAt: runs.completedAt })
+      .from(runs)
+      .where(eq(runs.userId, userId)),
     db
       .select({ name: user.name, handle: profiles.handle })
       .from(user)
@@ -20,11 +24,14 @@ async function fighterStats(userId: string, windowStart: Date | null, windowEnd:
       .where(eq(user.id, userId))
       .limit(1),
   ]);
-  const streak = summarizeStreak(rows.map((r) => r.completedAt));
-  // Scores freeze at endsAt: sessions after the window can't change a result.
+  // Runs count as training - same as streak/stats/card - so a battle reflects
+  // ALL training, not just lifting.
+  const trainingDates = [...rows, ...runRows].map((r) => r.completedAt);
+  const streak = summarizeStreak(trainingDates);
+  // Scores freeze at endsAt: training after the window can't change a result.
   const inWindow = windowStart
-    ? rows.filter(
-        (r) => r.completedAt >= windowStart && (windowEnd === null || r.completedAt <= windowEnd),
+    ? trainingDates.filter(
+        (d) => d >= windowStart && (windowEnd === null || d <= windowEnd),
       ).length
     : 0;
   return {

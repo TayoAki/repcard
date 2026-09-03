@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db, runs } from "@/db";
 import { auth } from "@/lib/auth";
 import { serverError } from "@/server/log";
+import { notifyRivals } from "@/server/notify-rivals";
 
 const CLOCK_SKEW_MS = 5 * 60 * 1000;
 
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
         completedAt: completedAt ? new Date(completedAt) : new Date(),
       })
       .returning();
+    notifyRivals(session.user.id, session.user.name).catch(() => {});
     return Response.json(created, { status: 201 });
   } catch (error) {
     return serverError("runs.POST", error);

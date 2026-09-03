@@ -1,9 +1,9 @@
-import { and, count, countDistinct, desc, eq, gt, lt, or, sql } from "drizzle-orm";
+import { and, count, countDistinct, desc, eq, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { battles, db, profiles, user, workoutExercises, workouts, workoutSessions, workoutSessionSets } from "@/db";
+import { db, user, workoutExercises, workouts, workoutSessions, workoutSessionSets } from "@/db";
 import { auth } from "@/lib/auth";
-import { sendPush } from "@/lib/push";
+import { notifyRivals } from "@/server/notify-rivals";
 import { serverError } from "@/server/log";
 
 const CLOCK_SKEW_MS = 5 * 60 * 1000;
@@ -174,33 +174,3 @@ export async function POST(request: Request) {
   return Response.json({ id: created.id, recordedSets: valid.length }, { status: 201 });
 }
 
-/** Tell rivals in battles that are active AND inside their window. Never throws. */
-async function notifyRivals(userId: string, userName: string) {
-  const active = await db
-    .select({ creatorId: battles.creatorId, opponentId: battles.opponentId })
-    .from(battles)
-    .where(
-      and(
-        eq(battles.status, "active"),
-        gt(battles.endsAt, new Date()),
-        or(eq(battles.creatorId, userId), eq(battles.opponentId, userId)),
-      ),
-    );
-
-  const rivalIds = active
-    .map((b) => (b.creatorId === userId ? b.opponentId : b.creatorId))
-    .filter((id): id is string => Boolean(id));
-  if (rivalIds.length === 0) return;
-
-  const tokens = await db
-    .select({ pushToken: profiles.pushToken })
-    .from(profiles)
-    .innerJoin(user, eq(user.id, profiles.userId))
-    .where(or(...rivalIds.map((id) => eq(profiles.userId, id))));
-
-  await sendPush(
-    tokens.map((t) => t.pushToken).filter((t): t is string => Boolean(t)),
-    "Your rival just trained 🔔",
-    `${userName} logged a session. The battle clock is ticking.`,
-  );
-}
