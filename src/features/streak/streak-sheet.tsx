@@ -1,9 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import { eachDayOfInterval, endOfWeek, format, isAfter, isSameDay, startOfDay, startOfWeek } from "date-fns";
+import { useEffect, useState } from "react";
 import { Image, Modal, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Button from "@/components/ui/button";
+import { enableReminders, remindersEnabled } from "@/features/streak/streak-reminder";
 import { cx } from "@/lib/cx";
 import { useToken } from "@/theme/use-token";
 import { type StreakSummary } from "@/lib/streak";
@@ -17,6 +19,21 @@ export default function StreakSheet({ summary, visible, onClose }: Props) {
   const today = startOfDay(new Date());
   const week = eachDayOfInterval({ start: startOfWeek(today), end: endOfWeek(today) });
   const trainedToday = summary.trainedDays.some((d) => isSameDay(d, today));
+  const atRisk = summary.current > 0 && !trainedToday;
+
+  // Reminder opt-in state: null while unknown, then granted/denied.
+  const [reminderOn, setReminderOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!visible) return;
+    let alive = true;
+    remindersEnabled().then((on) => alive && setReminderOn(on));
+    return () => {
+      alive = false;
+    };
+  }, [visible]);
+  const onEnableReminder = async () => {
+    setReminderOn(await enableReminders(summary));
+  };
 
   const nudge = trainedToday
     ? "Logged today. The card doesn't build itself - but today, you did."
@@ -102,6 +119,25 @@ export default function StreakSheet({ summary, visible, onClose }: Props) {
           <Text className="mt-1.5 text-center font-sans text-[13px] leading-5 text-muted-foreground">
             {nudge}
           </Text>
+
+          {atRisk && reminderOn === false ? (
+            <Pressable
+              accessibilityLabel="Remind me before my streak ends"
+              accessibilityRole="button"
+              className="mt-4 flex-row items-center justify-center gap-2 rounded-2xl border border-border bg-background py-3 active:bg-muted"
+              onPress={onEnableReminder}
+            >
+              <Feather color={primary} name="bell" size={15} />
+              <Text className="font-semibold text-[13px] text-foreground">Remind me before it ends</Text>
+            </Pressable>
+          ) : atRisk && reminderOn === true ? (
+            <View className="mt-4 flex-row items-center justify-center gap-1.5">
+              <Feather color={primary} name="bell" size={12} />
+              <Text className="font-medium text-[12px] text-muted-foreground">
+                We&apos;ll nudge you this evening if you haven&apos;t trained
+              </Text>
+            </View>
+          ) : null}
 
           <Button className="mt-6" onPress={onClose}>
             Keep going
