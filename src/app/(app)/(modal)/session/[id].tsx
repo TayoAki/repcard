@@ -8,6 +8,7 @@ import EmptyState from "@/components/ui/empty-state";
 import Screen from "@/components/ui/screen";
 import Skeleton from "@/components/ui/skeleton";
 import { fetchProfile, fetchSessionDetail } from "@/lib/api";
+import { shareWorkout } from "@/lib/share";
 import { displayVolume, displayWeight, formatDuration, formatSessionDate } from "@/lib/format";
 import { useToken } from "@/theme/use-token";
 
@@ -57,6 +58,16 @@ export default function SessionDetail() {
           >
             <Feather color={mutedFg} name="arrow-left" size={22} />
           </Pressable>
+          {data.workoutId ? (
+            <Pressable
+              accessibilityLabel="Share this workout"
+              accessibilityRole="button"
+              className="-mr-2 h-11 w-11 items-center justify-center"
+              onPress={() => shareWorkout(data.workoutId!, data.workoutName)}
+            >
+              <Feather color={mutedFg} name="share" size={20} />
+            </Pressable>
+          ) : null}
         </View>
 
         <Text className="font-bold text-[24px] tracking-tight text-foreground">{data.workoutName}</Text>

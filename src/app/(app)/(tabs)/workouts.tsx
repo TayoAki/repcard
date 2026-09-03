@@ -8,6 +8,7 @@ import EmptyState from "@/components/ui/empty-state";
 import Screen from "@/components/ui/screen";
 import Skeleton from "@/components/ui/skeleton";
 import { fetchWorkouts } from "@/lib/api";
+import { shareWorkout } from "@/lib/share";
 import { useToken } from "@/theme/use-token";
 
 export default function WorkoutsTab() {
@@ -122,7 +123,15 @@ export default function WorkoutsTab() {
                 {item.exerciseCount} exercises · {item.totalSets} sets
               </Text>
             </View>
-            <Feather color={mutedFg} name="chevron-right" size={19} />
+            <Pressable
+              accessibilityLabel={`Share ${item.name}`}
+              accessibilityRole="button"
+              className="h-10 w-10 items-center justify-center"
+              hitSlop={4}
+              onPress={() => shareWorkout(item.id, item.name)}
+            >
+              <Feather color={mutedFg} name="share" size={17} />
+            </Pressable>
           </TouchableOpacity>
         )}
         refreshControl={
