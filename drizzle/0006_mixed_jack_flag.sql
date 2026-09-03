@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "referral_redeemed_at" timestamp with time zone;

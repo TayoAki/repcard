@@ -37,6 +37,11 @@ export const profiles = pgTable("profiles", {
   weightUnit: weightUnitEnum().notNull().default("kg"),
   pushToken: text(), // Expo push token, set on opt-in (battles)
   leaderboardOptOut: boolean().notNull().default(false),
+  referralCode: text().unique(), // minted lazily; the user's own invite code
+  referredBy: text().references(() => user.id, { onDelete: "set null" }), // who invited them (nulls if referrer deleted)
+  // Immutable one-time-redemption marker. referredBy can be nulled by the FK's
+  // ON DELETE SET NULL, so eligibility must gate on this, not on referredBy.
+  referralRedeemedAt: timestamp({ withTimezone: true }),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true })
     .notNull()

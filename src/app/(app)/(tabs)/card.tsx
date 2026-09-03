@@ -13,7 +13,7 @@ import Screen from "@/components/ui/screen";
 import Skeleton from "@/components/ui/skeleton";
 import BattlesSection from "@/features/battles/battles-section";
 import PlayerCard from "@/features/card/player-card";
-import { deleteAccount, fetchMyCard, fetchProfile, updateProfile } from "@/lib/api";
+import { deleteAccount, fetchMyCard, fetchProfile, fetchReferral, updateProfile } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { haptic } from "@/lib/haptics";
 import { useToken } from "@/theme/use-token";
@@ -33,6 +33,7 @@ export default function CardTab() {
     queryFn: fetchMyCard,
   });
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
+  const { data: referral } = useQuery({ queryKey: ["referral"], queryFn: fetchReferral });
 
   const setUnit = useMutation({
     mutationFn: (weightUnit: "kg" | "lb") => updateProfile({ weightUnit }),
@@ -132,6 +133,25 @@ export default function CardTab() {
             <Text className="font-semibold text-[14px] text-foreground">Leaderboard</Text>
             <Text className="mt-0.5 font-sans text-[12px] text-muted-foreground">
               See where you rank this week
+            </Text>
+          </View>
+          <Feather color={mutedFg} name="chevron-right" size={18} />
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          className="mt-3 flex-row items-center rounded-2xl border border-border bg-card p-4 active:bg-muted"
+          onPress={() => router.push("/invite")}
+        >
+          <View className="h-9 w-9 items-center justify-center rounded-xl bg-accent dark:bg-accent/20">
+            <Feather color={primary} name="user-plus" size={18} />
+          </View>
+          <View className="ml-3 flex-1">
+            <Text className="font-semibold text-[14px] text-foreground">Invite friends</Text>
+            <Text className="mt-0.5 font-sans text-[12px] text-muted-foreground">
+              {referral && referral.recruits > 0
+                ? `${referral.recruits} joined from your invites`
+                : "Share your link, grow your roster"}
             </Text>
           </View>
           <Feather color={mutedFg} name="chevron-right" size={18} />

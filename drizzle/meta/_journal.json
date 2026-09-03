@@ -36,6 +36,20 @@
       "when": 1788457026790,
       "tag": "0004_huge_infant_terrible",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788464539785,
+      "tag": "0005_big_black_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788468361471,
+      "tag": "0006_mixed_jack_flag",
+      "breakpoints": true
     }
   ]
 }
