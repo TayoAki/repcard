@@ -1,4 +1,5 @@
 import {
+  boolean,
   integer,
   jsonb,
   pgEnum,
@@ -35,6 +36,7 @@ export const profiles = pgTable("profiles", {
   experience: experienceEnum().notNull(),
   weightUnit: weightUnitEnum().notNull().default("kg"),
   pushToken: text(), // Expo push token, set on opt-in (battles)
+  leaderboardOptOut: boolean().notNull().default(false),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true })
     .notNull()

@@ -55,14 +55,23 @@ export default function HomeTab() {
           <Text accessibilityRole="header" className="font-bold text-[22px] tracking-tight text-foreground">
             RepCard
           </Text>
-          <Pressable
-            accessibilityLabel={`Streak: ${streak.current} days`}
-            className="h-10 flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3.5 active:bg-muted"
-            onPress={streak.show}
-          >
-            <Feather color={primary} name="zap" size={15} />
-            <Text className="font-bold text-[14px] text-foreground">{streak.current}</Text>
-          </Pressable>
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              accessibilityLabel="Leaderboard"
+              className="h-10 w-10 items-center justify-center rounded-full border border-border bg-card active:bg-muted"
+              onPress={() => router.push("/leaderboard")}
+            >
+              <Feather color={primary} name="award" size={16} />
+            </Pressable>
+            <Pressable
+              accessibilityLabel={`Streak: ${streak.current} days`}
+              className="h-10 flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3.5 active:bg-muted"
+              onPress={streak.show}
+            >
+              <Feather color={primary} name="zap" size={15} />
+              <Text className="font-bold text-[14px] text-foreground">{streak.current}</Text>
+            </Pressable>
+          </View>
         </View>
 
         <WeekStrip

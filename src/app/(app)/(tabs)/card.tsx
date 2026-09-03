@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import { useColorScheme } from "nativewind";
 import { useRef, useState } from "react";
@@ -19,6 +20,7 @@ import { useToken } from "@/theme/use-token";
 
 /** Your card, the share action, and account settings. */
 export default function CardTab() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const shotRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
@@ -34,6 +36,10 @@ export default function CardTab() {
 
   const setUnit = useMutation({
     mutationFn: (weightUnit: "kg" | "lb") => updateProfile({ weightUnit }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profile"] }),
+  });
+  const setOptOut = useMutation({
+    mutationFn: (leaderboardOptOut: boolean) => updateProfile({ leaderboardOptOut }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profile"] }),
   });
 
@@ -114,6 +120,23 @@ export default function CardTab() {
           </>
         )}
 
+        <Pressable
+          accessibilityRole="button"
+          className="mt-8 flex-row items-center rounded-2xl border border-border bg-card p-4 active:bg-muted"
+          onPress={() => router.push("/leaderboard")}
+        >
+          <View className="h-9 w-9 items-center justify-center rounded-xl bg-accent dark:bg-accent/20">
+            <Feather color={primary} name="award" size={18} />
+          </View>
+          <View className="ml-3 flex-1">
+            <Text className="font-semibold text-[14px] text-foreground">Leaderboard</Text>
+            <Text className="mt-0.5 font-sans text-[12px] text-muted-foreground">
+              See where you rank this week
+            </Text>
+          </View>
+          <Feather color={mutedFg} name="chevron-right" size={18} />
+        </Pressable>
+
         <BattlesSection />
 
         <Text className="mb-2 mt-8 font-semibold text-[12px] uppercase tracking-wide text-muted-foreground">
@@ -150,6 +173,13 @@ export default function CardTab() {
               onValueChange={(on) => setColorScheme(on ? "dark" : "light")}
               trackColor={{ false: "#CBD5E1", true: primary }}
               value={colorScheme === "dark"}
+            />
+          </Row>
+          <Row icon="award" label="Show me on leaderboards">
+            <Switch
+              onValueChange={(on) => setOptOut.mutate(!on)}
+              trackColor={{ false: "#CBD5E1", true: primary }}
+              value={!(profile?.leaderboardOptOut ?? false)}
             />
           </Row>
           <Row icon="log-out" label="Sign out" onPress={signOut} />
