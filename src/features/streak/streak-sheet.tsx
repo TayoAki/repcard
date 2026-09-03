@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Button from "@/components/ui/button";
 import { cx } from "@/lib/cx";
+import { useToken } from "@/theme/use-token";
 import { type StreakSummary } from "@/lib/streak";
 
 type Props = { summary: StreakSummary; visible: boolean; onClose: () => void };
@@ -12,6 +13,7 @@ type Props = { summary: StreakSummary; visible: boolean; onClose: () => void };
 /** Bottom sheet: current streak, this week's grid, best streak, nudge copy. */
 export default function StreakSheet({ summary, visible, onClose }: Props) {
   const insets = useSafeAreaInsets();
+  const primary = useToken("primary");
   const today = startOfDay(new Date());
   const week = eachDayOfInterval({ start: startOfWeek(today), end: endOfWeek(today) });
   const trainedToday = summary.trainedDays.some((d) => isSameDay(d, today));
@@ -84,6 +86,19 @@ export default function StreakSheet({ summary, visible, onClose }: Props) {
           <Text className="mt-6 text-center font-semibold text-[14px] text-foreground">
             Best: {summary.best} {summary.best === 1 ? "day" : "days"}
           </Text>
+
+          {summary.freezesEarned > 0 ? (
+            <View className="mt-3 flex-row items-center justify-center gap-1.5">
+              <Feather color={primary} name="shield" size={13} />
+              <Text className="font-medium text-[12px] text-muted-foreground">
+                {summary.freezesEarned - summary.freezesUsed} rest-day{" "}
+                {summary.freezesEarned - summary.freezesUsed === 1 ? "freeze" : "freezes"} banked
+                {summary.freezesUsed > 0
+                  ? ` · ${summary.freezesUsed} protecting your streak`
+                  : ""}
+              </Text>
+            </View>
+          ) : null}
           <Text className="mt-1.5 text-center font-sans text-[13px] leading-5 text-muted-foreground">
             {nudge}
           </Text>
