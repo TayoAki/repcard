@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Alert, Pressable, Share, Text, TextInput, View } from "react-native";
 
 import Button from "@/components/ui/button";
+import { API_URL } from "@/lib/auth-client";
 import { createBattle, fetchBattles, joinBattle } from "@/lib/api";
 import { registerForPush } from "@/lib/notifications";
 import { useToken } from "@/theme/use-token";
@@ -26,7 +27,7 @@ export default function BattlesSection() {
       queryClient.invalidateQueries({ queryKey: ["battles"] });
       registerForPush();
       await Share.share({
-        message: `Streak battle. 7 days. Me vs you. Join with code ${battle.code} on RepCard.`,
+        message: `Streak battle. 7 days. Me vs you. Tap to join: ${API_URL}/b/${battle.code}`,
       });
     },
   });

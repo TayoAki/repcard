@@ -1,14 +1,15 @@
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, Image, Pressable, ScrollView, Share, Text, View } from "react-native";
+import { Alert, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Button from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
 import Screen from "@/components/ui/screen";
 import Skeleton from "@/components/ui/skeleton";
-import { deleteWorkout, fetchWorkout, mintShareSlug } from "@/lib/api";
+import { deleteWorkout, fetchWorkout } from "@/lib/api";
+import { shareWorkout } from "@/lib/share";
 import { useToken } from "@/theme/use-token";
 
 /** Workout detail: hero, plan list, start CTA, edit/delete actions. */
@@ -39,15 +40,7 @@ export default function WorkoutDetail() {
       { text: "Delete", style: "destructive", onPress: () => destroy.mutate() },
     ]);
 
-  const shareLink = async () => {
-    try {
-      const { slug } = await mintShareSlug(id);
-      const url = `${process.env.EXPO_PUBLIC_API_URL}/w/${slug}`;
-      await Share.share({ message: `${workout?.name} — my RepCard workout: ${url}` });
-    } catch (error) {
-      Alert.alert("Could not share", error instanceof Error ? error.message : "Try again");
-    }
-  };
+  const shareLink = () => workout && shareWorkout(id, workout.name);
 
   const actions = () =>
     Alert.alert(workout?.name ?? "Workout", undefined, [

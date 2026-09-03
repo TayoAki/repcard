@@ -32,6 +32,7 @@ export default function AppLayout() {
       <Stack.Screen name="(modal)/session/[id]" />
       <Stack.Screen name="(modal)/import/[slug]" />
       <Stack.Screen name="(modal)/battle/[id]" />
+      <Stack.Screen name="(modal)/battle/join/[code]" />
       <Stack.Screen
         name="(modal)/leaderboard"
         options={{ animation: "slide_from_bottom", presentation: "fullScreenModal" }}
