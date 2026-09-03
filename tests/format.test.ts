@@ -12,3 +12,5 @@ test("1h59m39s never renders 1h 60m", () => assert.equal(formatDuration(7179), "
 test("kg passthrough", () => assert.equal(displayWeight(22.5, "kg"), "22.5 kg"));
 test("lb conversion", () => assert.equal(displayWeight(100, "lb"), "220.5 lb"));
 test("volume in lb", () => assert.equal(displayVolume(1000, "lb"), "2,205 lb"));
+test("volume groups thousands without Intl", () => assert.equal(displayVolume(1234567, "kg"), "1,234,567 kg"));
+test("volume under 1000 has no separator", () => assert.equal(displayVolume(605, "kg"), "605 kg"));

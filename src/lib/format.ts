@@ -17,7 +17,9 @@ const KG_PER_LB = 0.45359237;
 export const displayWeight = (kg: number, unit: "kg" | "lb") =>
   unit === "kg" ? `${Math.round(kg * 10) / 10} kg` : `${Math.round((kg / KG_PER_LB) * 10) / 10} lb`;
 
+// Hand-rolled thousands separators: Hermes has no Intl, so toLocaleString()
+// silently drops grouping on-device.
+const group = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
 export const displayVolume = (kg: number, unit: "kg" | "lb") =>
-  unit === "kg"
-    ? `${Math.round(kg).toLocaleString()} kg`
-    : `${Math.round(kg / KG_PER_LB).toLocaleString()} lb`;
+  unit === "kg" ? `${group(kg)} kg` : `${group(kg / KG_PER_LB)} lb`;
