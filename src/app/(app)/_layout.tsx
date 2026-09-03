@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { StreakProvider } from "@/features/streak/streak-context";
 import { hasProfile, redeemReferral } from "@/lib/api";
-import { takePendingReferral } from "@/lib/referral-store";
+import { clearPendingReferral, getPendingReferral } from "@/lib/referral-store";
 
 export default function AppLayout() {
   const pathname = usePathname();
@@ -15,14 +15,25 @@ export default function AppLayout() {
   });
 
   // Redeem an invite tapped before sign-in, once the user has a profile.
-  // Best-effort: an invalid/already-used code just clears silently.
+  // Clear the stashed code only on a terminal result (redeemed, or a
+  // confirmed-invalid response) - a transient network error keeps it so the
+  // next launch can retry, rather than silently losing the attribution.
   useEffect(() => {
     if (profileExists !== true) return;
-    takePendingReferral().then((code) => {
+    getPendingReferral().then((code) => {
       if (!code) return;
       redeemReferral(code)
-        .then(() => queryClient.invalidateQueries({ queryKey: ["referral"] }))
-        .catch(() => {});
+        .then(() => {
+          clearPendingReferral();
+          queryClient.invalidateQueries({ queryKey: ["referral"] });
+        })
+        .catch((err: { status?: number }) => {
+          // 400 self / 404 unknown / 409 already-redeemed are terminal; a
+          // missing status (network) or 5xx is transient - keep the code.
+          if (err?.status === 400 || err?.status === 404 || err?.status === 409) {
+            clearPendingReferral();
+          }
+        });
     });
   }, [profileExists, queryClient]);
 

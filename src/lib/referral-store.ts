@@ -11,13 +11,17 @@ export function stashPendingReferral(code: string): void {
   AsyncStorage.setItem(KEY, code).catch(() => {});
 }
 
-/** Reads and clears the pending code (one-shot). */
-export async function takePendingReferral(): Promise<string | null> {
+/** Reads the pending code WITHOUT clearing it - a caller must clear it only
+ *  after a terminal result (redeemed, or a confirmed-invalid response), so a
+ *  transient network error keeps the code for the next launch. */
+export async function getPendingReferral(): Promise<string | null> {
   try {
-    const code = await AsyncStorage.getItem(KEY);
-    if (code) await AsyncStorage.removeItem(KEY);
-    return code;
+    return await AsyncStorage.getItem(KEY);
   } catch {
     return null;
   }
+}
+
+export function clearPendingReferral(): void {
+  AsyncStorage.removeItem(KEY).catch(() => {});
 }

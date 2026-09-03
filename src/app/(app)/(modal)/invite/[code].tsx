@@ -7,7 +7,7 @@ import { ActivityIndicator, Text, View } from "react-native";
 import Button from "@/components/ui/button";
 import Screen from "@/components/ui/screen";
 import { redeemReferral } from "@/lib/api";
-import { stashPendingReferral } from "@/lib/referral-store";
+import { clearPendingReferral, stashPendingReferral } from "@/lib/referral-store";
 import { useToken } from "@/theme/use-token";
 
 /** Deep-link target: repcard://invite/[code]. Redeems an incoming invite. */
@@ -19,7 +19,14 @@ export default function RedeemInvite() {
 
   const redeem = useMutation({
     mutationFn: () => redeemReferral(code),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["referral"] }),
+    onSuccess: () => {
+      clearPendingReferral(); // consumed - don't let (app)/_layout retry it
+      queryClient.invalidateQueries({ queryKey: ["referral"] });
+    },
+    onError: (err: { status?: number }) => {
+      // Terminal failures won't succeed on retry either - stop the stash retry.
+      if (err?.status === 400 || err?.status === 404 || err?.status === 409) clearPendingReferral();
+    },
   });
 
   useEffect(() => {
