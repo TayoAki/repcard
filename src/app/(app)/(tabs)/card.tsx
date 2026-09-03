@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import { useColorScheme } from "nativewind";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { captureRef } from "react-native-view-shot";
 
@@ -17,6 +17,7 @@ import { deleteAccount, fetchMyCard, fetchProfile, fetchReferral, updateProfile 
 import { authClient } from "@/lib/auth-client";
 import { haptic } from "@/lib/haptics";
 import { useToken } from "@/theme/use-token";
+import { updateWidget } from "@/lib/widget";
 
 /** Your card, the share action, and account settings. */
 export default function CardTab() {
@@ -34,6 +35,11 @@ export default function CardTab() {
   });
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
   const { data: referral } = useQuery({ queryKey: ["referral"], queryFn: fetchReferral });
+
+  // Keep the home-screen widget's snapshot fresh whenever the card loads.
+  useEffect(() => {
+    if (card) updateWidget(card);
+  }, [card]);
 
   const setUnit = useMutation({
     mutationFn: (weightUnit: "kg" | "lb") => updateProfile({ weightUnit }),

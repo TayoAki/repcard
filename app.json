@@ -9,7 +9,10 @@
     "ios": {
       "bundleIdentifier": "com.tayoaki.repcard",
       "supportsTablet": false,
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.tayoaki.repcard"]
+      }
     },
     "android": {
       "package": "com.tayoaki.repcard",
@@ -43,7 +46,8 @@
       "expo-web-browser",
       "expo-secure-store",
       "expo-sharing",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true,
