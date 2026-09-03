@@ -79,7 +79,10 @@ export async function GET(request: Request) {
 
   const ranked = values
     .filter((v) => meta.has(v.userId) && v.value > 0)
-    .sort((a, b) => b.value - a.value)
+    // Deterministic order: value desc, then userId asc so ties never reshuffle
+    // across identical requests (DB group order is unspecified). Plain string
+    // compare, not localeCompare - Hermes ships no Intl.
+    .sort((a, b) => b.value - a.value || (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0))
     .map((v, i) => ({
       rank: i + 1,
       handle: meta.get(v.userId)!.handle,
