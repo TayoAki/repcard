@@ -66,6 +66,16 @@ test("no freeze earned means a gap still breaks", () => {
   assert.equal(r.freezesEarned, 0);
   assert.equal(r.current, 1);
 });
+test("a freeze is never spent before it is earned", () => {
+  // Aug 16, then Aug 18-23 = 7 trained days, so 1 freeze is earned - but only
+  // ON Aug 23 (the 7th session), AFTER the Aug 17 gap. That freeze must not
+  // reach back to bridge Aug 17, so the current run is 6 (18..23), not 7.
+  const dates = [d("2026-08-16"), ...Array.from({ length: 6 }, (_, i) => d(`2026-08-${18 + i}`))];
+  const r = summarizeStreak(dates, new Date("2026-08-23T18:00:00"));
+  assert.equal(r.current, 6);
+  assert.equal(r.freezesEarned, 1); // earned on the 23rd...
+  assert.equal(r.freezesUsed, 0); // ...but not spent on the earlier gap
+});
 test("best is never less than current", () => {
   const dates = [
     ...Array.from({ length: 8 }, (_, i) => d(`2026-08-${String(14 + i).padStart(2, "0")}`)),
