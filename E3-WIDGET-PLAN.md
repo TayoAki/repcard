@@ -1,9 +1,13 @@
 # E3 — Home-screen widget (iOS WidgetKit) · implementation runbook
 
-**Status:** speced, not built. The native build must run on your Mac + a device/simulator
-(Expo `export` in CI does **not** build native extensions, and native builds have been
-flaky in the agent sandbox). This doc is a turnkey runbook so the native part is
-mechanical when you run it.
+**Status: IMPLEMENTED** (`feat/home-widget`). The widget target, App Group data bridge,
+and app-side writer are built and the app **compiles and links for the iOS simulator**
+(app + `widget.appex` embedded, extension point `com.apple.widgetkit-extension`). Verified
+here: builds clean with `CODE_SIGNING_ALLOWED=NO`, and — good news — **App Groups build on
+the simulator without an Apple Team ID**. Still pending: a live-data home-screen screenshot
+(needs a full authenticated app run) and **production/device builds require `ios.appleTeamId`
++ registering the App Group `group.com.tayoaki.repcard` in the Apple portal**. The sections
+below are the original plan, kept as reference for the device/App-Store path.
 
 **Goal:** a Lock/Home-screen widget that shows the athlete's **OVR + streak** (and, on
 the medium size, best streak + position), styled like the Player Card. It's a passive,
