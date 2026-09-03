@@ -76,6 +76,10 @@ export default function AppLayout() {
         name="(modal)/plan/generate"
         options={{ animation: "slide_from_bottom", presentation: "fullScreenModal" }}
       />
+      <Stack.Screen
+        name="(modal)/paywall"
+        options={{ animation: "slide_from_bottom", presentation: "fullScreenModal" }}
+      />
     </Stack>
     </StreakProvider>
   );
